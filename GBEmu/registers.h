@@ -5,98 +5,55 @@
 
 #include "stdafx.h"
 
-struct reg
+struct Regs
 {
 	union
 	{
-		uint16_t value;
+		uint16_t AF;
 		struct
 		{
-			uint8_t low;
-			uint8_t high;
+			uint8_t A;
+			union
+			{
+				uint8_t F;
+				struct
+				{
+					uint8_t Zf : 1;
+					uint8_t Nf : 1;
+					uint8_t Hf : 1;
+					uint8_t Cf : 1;
+					uint8_t unused : 4;
+				};
+			};
 		};
 	};
-
-	reg() : value(0) {}
-};
-
-enum Reg
-{
-	AF, A, F,
-	BC, B, C,
-	DE, D, E,
-	HL, H, L,
-	SP,
-	PC
-};
-
-class InvalidRegisterException : public std::runtime_error
-{
-public:
-	InvalidRegisterException(const std::string& what_arg) : std::runtime_error(what_arg) {}
-};
-
-class Regs
-{
-private:
-	reg AF, BC, DE, HL, SP, PC;
-
-public:
-	uint8_t && reg8(Reg reg)
+	union
 	{
-		switch (reg)
+		uint16_t BC;
+		struct
 		{
-		case Reg::A:
-			return std::move(AF.high);
-		case Reg::B:
-			return std::move(BC.high);
-		case Reg::C:
-			return std::move(BC.low);
-		case Reg::D:
-			return std::move(DE.high);
-		case Reg::E:
-			return std::move(DE.low);
-		case Reg::H:
-			return std::move(HL.high);
-		case Reg::L:
-			return std::move(HL.low);
-		}
-	}
-
-	uint16_t && reg16(Reg reg)
+			uint8_t B;
+			uint8_t C;
+		};
+	};
+	union
 	{
-	}
-
-	void set8(Reg reg, uint8_t value)
-	{
-		switch (reg)
+		uint16_t DE;
+		struct
 		{
-		case Reg::A:
-			AF.high = value;
-			break;
-		case Reg::BC:
-		case Reg::C:
-			BC.low = value;
-			break;
-		case Reg::B:
-			BC.high = value;
-			break;
-		case Reg::DE:
-		case Reg::E:
-			DE.low = value;
-			break;
-		case Reg::D:
-			DE.high = value;
-			break;
-		case Reg::HL:
-		case Reg::L:
-			HL.low = value;
-			break;
-		case Reg::H:
-			HL.high = value;
-			break;
-		default:
-			throw InvalidRegisterException("Unexpected register");
-		}
-	}
+			uint8_t D;
+			uint8_t E;
+		};
+	};
+	union
+	{
+		uint16_t HL;
+		struct
+		{
+			uint8_t H;
+			uint8_t L;
+		};
+	};
+	uint16_t SP;
+	uint16_t PC;
 };

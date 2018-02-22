@@ -1,39 +1,39 @@
 #pragma once
 
+#include "registers.h"
+
 class Program
 {
 private:
 	uint8_t * data;
-	uint16_t pointer;
+	Regs & regs;
 
 public:
-	Program(uint8_t * data_arg) : data(data_arg), pointer(0) {}
+	Program(uint8_t * data_arg, Regs & regs) : data(data_arg), regs(regs) {}
 	~Program() {}
-
-	uint16_t getPointer() { return pointer; }
 
 	uint8_t nextB()
 	{
-		uint8_t value = data[pointer];
-		pointer++;
+		uint8_t value = data[regs.PC];
+		regs.PC++;
 		return value;
 	}
 
 	uint16_t nextW()
 	{
-		uint16_t value = *(uint16_t*)(data + pointer);
-		pointer += 2;
+		uint16_t value = *(uint16_t*)(data + regs.PC);
+		regs.PC += 2;
 		return value;
 	}
 
 	void jump(uint16_t address)
 	{
-		pointer = address;
+		regs.PC = address;
 	}
 
 	void jumpRelative(uint8_t jump)
 	{
-		pointer += jump;
+		regs.PC += jump;
 	}
 };
 
