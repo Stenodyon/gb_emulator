@@ -4,12 +4,15 @@
 #include <chrono>
 #include <thread>
 
+#include "RAM.h"
+
 
 class Display
 {
 private:
 	SDL_Window * win;
 	SDL_Renderer * renderer;
+	RAM & ram;
 
 	std::chrono::time_point<std::chrono::system_clock> startTime;
 	uint64_t getMicroseconds()
@@ -55,14 +58,14 @@ public:
 	};
 	palette bg_palette, obj_palette0, obj_palette1;
 
-	Display()
+	Display(RAM & ram) : ram(ram)
 	{
 		startTime = std::chrono::system_clock::now();
 		if (SDL_Init(SDL_INIT_VIDEO) != 0)
 		{
 			throw std::runtime_error("SDL: " + std::string(SDL_GetError()));
 		}
-		win = SDL_CreateWindow("GBEmu", 100, 100, 640, 480, SDL_WINDOW_SHOWN);
+		win = SDL_CreateWindow("GBEmu", 100, 100, 160 * 4, 144 * 4, SDL_WINDOW_SHOWN);
 		if (win == nullptr)
 		{
 			std::string msg = "SDL: " + std::string(SDL_GetError());

@@ -24,6 +24,8 @@ class CPU
 public:
 	std::vector<uint16_t> breakpoints;
 
+	uint64_t cycleCount = 0;
+
 private:
 	Regs regs;
 	RAM ram;
@@ -56,7 +58,7 @@ private:
 	_int_flag int_enable, int_flag;
 
 public:
-	CPU(uint8_t * program_data, size_t size) : ram(program_data, size, this)
+	CPU(uint8_t * program_data, size_t size) : ram(program_data, size, this) , display(ram)
 	{
 		jump(0x100); // Entry point is 0x100
 
@@ -107,6 +109,7 @@ public:
 	{
 		uint64_t microseconds = (uint64_t)(cycleCount * 0.23866);
 		std::this_thread::sleep_for(std::chrono::microseconds(microseconds));
+		this->cycleCount += cycleCount;
 	}
 
 	uint8_t nextB()
@@ -175,6 +178,13 @@ public:
 			uint16_t value = nextW();
 			regs.BC = value;
 			cycleWait(12);
+			break;
+		}
+		case 0x08: // LD B, d8
+		{
+			uint8_t value = nextB();
+			regs.B = value;
+			cycleWait(8);
 			break;
 		}
 		case 0x0B: // DEC BC
@@ -572,6 +582,18 @@ public:
 
 	void interrupt(uint8_t value)
 	{
+		switch (value)
+		{
+		case 0x40: // V-Blank interrupt
+			int_flag.vblank = 1;
+			break;
+		default:
+		{
+			std::ostringstream sstream;
+			sstream << "Invalid interrupt value: " << hex<uint8_t>(value);
+			throw std::runtime_error(sstream.str());
+		}
+		}
 	}
 
 private:
@@ -583,6 +605,21 @@ private:
 	bool halfcarry(uint16_t a, uint16_t b)
 	{
 		return (((a & 0x0F) + (b & 0x0F)) & 0x10) == 0x10;
+	}
+
+	void checkInterrupts()
+	{
+		if (!interruptsEnabled)
+			return;
+		if (int_enable.vblank && int_flag.vblank)
+			executeInterrupt(0x40);
+	}
+
+	void executeInterrupt(uint8_t value)
+	{
+		interruptsEnabled = false;
+		push(regs.PC);
+		jump(value);
 	}
 };
 
