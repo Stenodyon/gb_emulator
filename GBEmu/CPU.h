@@ -416,7 +416,10 @@ public:
 	{
 		std::cout << "--- Starting execution ---" << std::endl;
 		while (running)
+		{
 			step();
+			display.update();
+		}
 		std::cout << "--- Executed all instructions ---" << std::endl;
 		regs.dump();
 	}
