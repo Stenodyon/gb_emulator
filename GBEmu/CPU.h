@@ -4,11 +4,14 @@
 #include <cstring>
 #include <chrono>
 #include <thread>
+#include <vector>
 
 #include "stdafx.h"
 #include "registers.h"
 #include "RAM.h"
 #include "Display.h"
+#include "Serial.h"
+#include "Timer.h"
 
 class OpcodeNotImplemented : public std::runtime_error
 {
@@ -18,10 +21,15 @@ public:
 
 class CPU
 {
+public:
+	std::vector<uint16_t> breakpoints;
+
 private:
 	Regs regs;
 	RAM ram;
 	Display display;
+	Serial serial;
+	Timer timer;
 	bool running = true;
 	bool interruptsEnabled = true;
 
@@ -45,10 +53,10 @@ private:
 		_int_flag& operator=(uint8_t value) { this->value = value; return *this; }
 		operator uint8_t() const { return this->value; }
 	};
-	_int_flag int_flag;
+	_int_flag int_enable, int_flag;
 
 public:
-	CPU(uint8_t * program_data, size_t size) : ram(program_data, size)
+	CPU(uint8_t * program_data, size_t size) : ram(program_data, size, this)
 	{
 		jump(0x100); // Entry point is 0x100
 
@@ -149,6 +157,12 @@ public:
 		//*/
 
 		uint16_t currentPointer = regs.PC;
+		if (std::find(breakpoints.begin(), breakpoints.end(), currentPointer) != breakpoints.end())
+		{
+			std::cout << "Breakpoint " << hex<uint16_t>(currentPointer) << std::endl;
+			regs.dump();
+			getchar();
+		}
 		uint8_t instr = nextB();
 		std::cout << "[" << hex<uint16_t>(currentPointer) << "] " << hex<uint8_t>(instr) << std::endl;
 		switch (instr)
@@ -171,7 +185,7 @@ public:
 		}
 		case 0x20: // JR NZ, r8
 		{
-			regs.dump();
+			//regs.dump();
 			uint8_t jump = nextB();
 			if (!regs.Zf)
 			{
@@ -189,6 +203,13 @@ public:
 			uint16_t value = nextW();
 			regs.HL = value;
 			cycleWait(12);
+			break;
+		}
+		case 0x22: // LDI (HL), A (puts A into (HL) and increment HL)
+		{
+			ram[regs.HL] = regs.A;
+			regs.HL++;
+			cycleWait(8);
 			break;
 		}
 		case 0x23: // INC HL
@@ -224,9 +245,21 @@ public:
 			cycleWait(4);
 			break;
 		}
+		case 0x57: // LD D, A
+		{
+			regs.D = regs.A;
+			cycleWait(4);
+			break;
+		}
 		case 0x78: // LD A, B
 		{
 			regs.A = regs.B;
+			cycleWait(4);
+			break;
+		}
+		case 0x7A: // LD A, D
+		{
+			regs.A = regs.D;
 			cycleWait(4);
 			break;
 		}
@@ -274,12 +307,22 @@ public:
 			cycleWait(24);
 			break;
 		}
+		case 0xD1: // POP DE
+		{
+			regs.DE = pop();
+			cycleWait(12);
+			break;
+		}
+		case 0xD5: // PUSH DE
+		{
+			push(regs.DE);
+			cycleWait(16);
+			break;
+		}
 		case 0xE0: // LDH (a8), A
 		{
 			uint8_t nextVal = nextB();
 			uint16_t value = 0xFF00 + nextVal;
-			if (value >= 0xFF00 && value <= 0xFF7F)
-				OnIOWrite(nextVal, regs.A);
 			ram[value] = regs.A;
 			cycleWait(12);
 			break;
@@ -299,10 +342,7 @@ public:
 		{
 			uint8_t nextVal = nextB();
 			uint16_t value = 0xFF00 + nextVal;
-			if (value >= 0xFF00 && value <= 0xFF7F)
-				regs.A = OnIORead(nextVal);
-			else
-				regs.A = ram[value];
+			regs.A = ram[value];
 			cycleWait(12);
 			break;
 		}
@@ -371,23 +411,105 @@ public:
 		regs.dump();
 	}
 
+public:
 	void OnIOWrite(uint8_t port, uint8_t value)
 	{
 		switch (port)
 		{
+		case 0x01: // Serial Data
+		{
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to serial data" << std::endl;
+			serial.data = value;
+			break;
+		}
+		case 0x02: // Serial Tranfer Control
+		{
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to serial control" << std::endl;
+			serial.control = value;
+			break;
+		}
+		case 0x04: // Timer Divider
+		{
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to timer divider" << std::endl;
+			timer.divider = 0x00;
+			break;
+		}
+		case 0x05: // Timer counter
+		{
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to timer counter" << std::endl;
+			timer.counter = value;
+			break;
+		}
+		case 0x06: // Timer modulo
+		{
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to timer modulo" << std::endl;
+			timer.modulo = value;
+			break;
+		}
+		case 0x07: // Timer control
+		{
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to timer control" << std::endl;
+			timer.control = value;
+			break;
+		}
 		case 0x0F: // Interrupt flag
 		{
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to interrupt flag" << std::endl;
 			int_flag = value;
+			break;
+		}
+		case 0x40: // Display - LCD Control
+		{
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to display control" << std::endl;
+			display.control = value;
 			break;
 		}
 		case 0x42: // Display - Scroll Y
 		{
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to display scroll x" << std::endl;
 			display.scrollY = value;
 			break;
 		}
 		case 0x43: // Display - Scroll X
 		{
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to display scroll y" << std::endl;
 			display.scrollX = value;
+			break;
+		}
+		case 0x47: // Display - Background palette
+		{
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to display bg palette" << std::endl;
+			display.bg_palette = value;
+			break;
+		}
+		case 0x48: // Display - OBJ Palette 0
+		{
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to display obj 0 palette" << std::endl;
+			display.obj_palette0 = value;
+			break;
+		}
+		case 0x49: // Display - OBJ Palette 1
+		{
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to display obj 1 palette" << std::endl;
+			display.obj_palette1 = value;
+			break;
+		}
+		case 0x4A: // Display - Window Y
+		{
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to display window y" << std::endl;
+			display.winPosY = value;
+			break;
+		}
+		case 0x4B: // Display - Window X
+		{
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to display window x" << std::endl;
+			display.winPosX = value;
+			break;
+		}
+		case 0xFF: // Interrupt master enable
+		{
+			interruptsEnabled = value;
+			std::cout << (interruptsEnabled ? "Enabled" : "Disabled") << " interrupts" << std::endl;
 			break;
 		}
 		default:
@@ -399,26 +521,47 @@ public:
 
 	uint8_t OnIORead(uint8_t port)
 	{
+		std::cout << "Reading from IO port " << hex<uint8_t>(port) << std::endl;
 		switch (port)
 		{
+		case 0x01: // Serial data
+			return serial.data;
+		case 0x02: // Serial transfer control
+			return serial.control;
+		case 0x04: // Timer divider
+			return timer.divider;
+		case 0x05: // Timer counter
+			return timer.counter;
+		case 0x06: // Timer modulo
+			return timer.modulo;
+		case 0x07: // Timer control
+			return timer.control;
 		case 0x0F: // Interrupt flag
-		{
 			return int_flag;
-		}
+		case 0x40: // Display - LCD Control
+			return display.control;
 		case 0x42: // Display - Scroll Y
-		{
 			return display.scrollY;
-		}
 		case 0x43: // Display - Scroll X
-		{
 			return display.scrollX;
-		}
+		case 0x47: // Display - Background palette
+			return display.bg_palette;
+		case 0x48: // Display - OBJ Palette 0
+			return display.obj_palette0;
+		case 0x49: // Display - OBJ Palette 1
+			return display.obj_palette1;
+		case 0x4A: // Display - Window Y
+			return display.winPosY;
+		case 0x4B: // Display - Window X
+			return display.winPosX;
 		case 0x44: // LCD - LY
 		{
 			uint8_t ly = display.LY();
 			std::cout << "Read LY: " << hex<uint8_t>(ly) << std::endl;
 			return ly;
 		}
+		case 0xFF: // Interrupt master flag
+			return (uint8_t)interruptsEnabled;
 		default:
 			std::cout << "Warning, reading from unimplemented IO port " << hex<uint8_t>(port) << std::endl;
 			throw std::runtime_error("IO");
@@ -427,6 +570,11 @@ public:
 		return 0;
 	}
 
+	void interrupt(uint8_t value)
+	{
+	}
+
+private:
 	bool halfcarry(uint8_t a, uint8_t b)
 	{
 		return (((a & 0x0F) + (b & 0x0F)) & 0x10) == 0x10;

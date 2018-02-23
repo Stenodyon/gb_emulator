@@ -1,5 +1,7 @@
 #pragma once
 
+class CPU;
+
 enum MBCType
 {
 	ROM,
@@ -9,6 +11,7 @@ enum MBCType
 class RAM
 {
 public:
+	CPU * cpu;
 	uint8_t * cartridge;
 
 	union
@@ -99,20 +102,14 @@ private:
 			return *this;
 		}
 
-		cell_assignment& operator=(uint8_t value)
-		{
-			return assign<uint8_t>(value);
-		}
+		cell_assignment& operator=(uint8_t value);
 
 		cell_assignment& operator=(uint16_t value)
 		{
 			return assign<uint16_t>(value);
 		}
 
-		operator uint8_t() const {
-			uint8_t * block = getMemoryBlock();
-			return block[address & addressMask];
-		}
+		operator uint8_t() const;
 
 		operator uint16_t() const {
 			uint8_t * block = getMemoryBlock();
@@ -196,9 +193,8 @@ private:
 	}
 
 public:
-	RAM(uint8_t * data, size_t size)
+	RAM(uint8_t * data, size_t size, CPU * cpu) : cartridge(data), cpu(cpu)
 	{
-		cartridge = data;
 		type = getMBCType(data);
 		if (type == MBCType::ROM)
 		{

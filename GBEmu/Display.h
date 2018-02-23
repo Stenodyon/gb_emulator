@@ -19,7 +19,41 @@ private:
 	}
 	
 public:
+	union {
+		uint8_t control;
+#pragma pack(push, 1)
+		struct {
+			uint8_t bg_display : 1;
+			uint8_t obj_dispay_enable : 1;
+			uint8_t obj_size : 1; // (0 = 8x8, 1 = 8x16)
+			uint8_t bg_tilemap_select : 1;
+			uint8_t bg_win_tile_data_select : 1;
+			uint8_t win_display_enable : 1;
+			uint8_t win_tilemap_select : 1;
+			uint8_t lcd_display_enable : 1;
+		};
+#pragma pack(pop)
+	};
 	uint8_t scrollX, scrollY;
+	uint8_t winPosX, winPosY;
+	struct palette
+	{
+		union {
+			uint8_t value;
+#pragma pack(push, 1)
+			struct {
+				uint8_t shade0 : 2;
+				uint8_t shade1 : 2;
+				uint8_t shade2 : 2;
+				uint8_t shade3 : 2;
+			};
+#pragma pack(pop)
+		};
+
+		palette& operator=(uint8_t value) { this->value = value; return *this; }
+		operator uint8_t() const { return this->value; }
+	};
+	palette bg_palette, obj_palette0, obj_palette1;
 
 	Display()
 	{
