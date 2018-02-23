@@ -5,6 +5,7 @@
 
 #include "stdafx.h"
 #include "registers.h"
+#include "RAM.h"
 
 class OpcodeNotImplemented : public std::runtime_error
 {
@@ -16,14 +17,13 @@ class CPU
 {
 private:
 	Regs regs;
-	uint8_t ram[0x10000];
+	RAM ram;
 	bool running = true;
 	bool interruptsEnabled = true;
 
 public:
-	CPU(uint8_t * program_data)
+	CPU(uint8_t * program_data, size_t size) : ram(program_data, size)
 	{
-		std::memcpy(ram, program_data, 0x4000);
 		jump(0x100); // Entry point is 0x100
 
 		regs.AF = 0x01B0;
@@ -78,7 +78,7 @@ public:
 
 	uint16_t nextW()
 	{
-		uint16_t value = *(uint16_t*)(ram + regs.PC);
+		uint16_t value = ram[regs.PC];
 		regs.PC += 2;
 		return value;
 	}
@@ -95,14 +95,14 @@ public:
 
 	void push(uint16_t value)
 	{
-		*(uint16_t*)(ram + regs.SP - 1) = value;
+		(uint16_t&)ram[regs.SP - 1] = value;
 		regs.SP -= 2;
 	}
 
 	uint16_t pop()
 	{
 		regs.SP += 2;
-		return *(uint16_t*)(ram + regs.SP - 1);
+		return ram[regs.SP - 1];
 	}
 
 	void step()
@@ -193,6 +193,13 @@ public:
 			regs.Cf = regs.A < value;
 			break;
 		}
+		case 0xFF: // RST 0x38 (equivalent to CALL 0x38)
+		{
+			uint16_t returnAddress = nextW();
+			push(returnAddress);
+			jump(0x0038);
+			break;
+		}
 		default:
 		{
 			std::ostringstream sstream;
@@ -226,8 +233,10 @@ public:
 
 	void run()
 	{
+		std::cout << "--- Starting execution ---" << std::endl;
 		while(running)
 			step();
+		std::cout << "--- Executed all instructions ---" << std::endl;
 	}
 
 	void OnIOWrite(uint8_t port, uint8_t value)
