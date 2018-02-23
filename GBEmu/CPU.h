@@ -58,7 +58,7 @@ private:
 	_int_flag int_enable, int_flag;
 
 public:
-	CPU(uint8_t * program_data, size_t size) : ram(program_data, size, this) , display(ram)
+	CPU(uint8_t * program_data, size_t size) : ram(program_data, size, this) , display(ram), timer(this)
 	{
 		jump(0x100); // Entry point is 0x100
 
@@ -590,6 +590,9 @@ public:
 		case 0x40: // V-Blank interrupt
 			int_flag.vblank = 1;
 			break;
+		case 0x50:
+			int_flag.timer = 1;
+			break;
 		default:
 		{
 			std::ostringstream sstream;
@@ -616,6 +619,8 @@ private:
 			return;
 		if (int_enable.vblank && int_flag.vblank)
 			executeInterrupt(0x40);
+		else if (int_enable.timer && int_flag.timer)
+			executeInterrupt(0x50);
 	}
 
 	void executeInterrupt(uint8_t value)

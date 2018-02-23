@@ -1,8 +1,11 @@
 #pragma once
 
+class CPU;
+
 class Timer
 {
 public:
+	CPU * cpu;
 	uint8_t divider, counter, modulo;
 	union
 	{
@@ -16,7 +19,9 @@ public:
 #pragma pack(pop)
 	};
 
-	Timer() {}
+	Timer(CPU * cpu) : cpu(cpu) {}
 	~Timer() {}
+
+	void update();
 };
 
