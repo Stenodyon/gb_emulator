@@ -55,6 +55,9 @@ private:
 	_ROMBank ROMBank;
 	uint8_t RAMBank;
 
+	/*
+		Wrapper to perform operations on memory cell assignment
+	*/
 	class cell_assignment
 	{
 	private:
@@ -72,7 +75,8 @@ private:
 	public:
 		cell_assignment(RAM & ram, uint16_t address) : ram(ram), address(address) {}
 
-		cell_assignment& operator=(uint8_t value)
+		template <typename T>
+		cell_assignment& assign(T value)
 		{
 			if (address >= 0x8000 && address <= 0x9FFF
 				|| address >= 0xA000 && address <= 0xBFFF && ram.ramEnabled
@@ -80,19 +84,29 @@ private:
 				|| address >= 0xFF80 && address <= 0xFFFE)
 			{
 				uint8_t * block = getMemoryBlock();
-				block[address & addressMask] = value;
+				*(T*)(block + (address & addressMask)) = value;
 			}
 			if (ram.type == MBCType::ROM)
 				return *this;
 			if (address >= 0x0000 && address <= 0x1FFF)
-				ram.OnRamEnableWrite(value);
+				ram.OnRamEnableWrite((uint8_t)value);
 			else if (address >= 0x2000 && address <= 0x3FFF)
-				ram.OnROMBankNumber(value);
+				ram.OnROMBankNumber((uint8_t)value);
 			else if (address >= 0x4000 && address <= 0x5FFF)
-				ram.OnRAMBankNumber(value);
+				ram.OnRAMBankNumber((uint8_t)value);
 			else if (address >= 0x6000 && address <= 0x7FFF)
-				ram.OnModeSelect(value);
+				ram.OnModeSelect((uint8_t)value);
 			return *this;
+		}
+
+		cell_assignment& operator=(uint8_t value)
+		{
+			return assign<uint8_t>(value);
+		}
+
+		cell_assignment& operator=(uint16_t value)
+		{
+			return assign<uint16_t>(value);
 		}
 
 		operator uint8_t() const {
