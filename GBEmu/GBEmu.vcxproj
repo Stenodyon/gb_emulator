@@ -160,6 +160,7 @@
     <ClInclude Include="RAM.h" />
     <ClInclude Include="registers.h" />
     <ClInclude Include="Serial.h" />
+    <ClInclude Include="Sound.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Timer.h" />
@@ -172,6 +173,7 @@
     <ClCompile Include="RAM.cpp" />
     <ClCompile Include="registers.cpp" />
     <ClCompile Include="Serial.cpp" />
+    <ClCompile Include="Sound.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

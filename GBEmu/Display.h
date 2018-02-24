@@ -83,15 +83,11 @@ private:
 		{
 			for (uint8_t _x = 0; _x < 32; _x++)
 			{
-				uint8_t index = _x + 32 * _y;
+				uint8_t index = ((_x - scrollX / 8) + 32 * (_y - scrollY / 8) + 1024) % 1024;
 				uint8_t tileIndex = *(ram.memory + 0x9800);
 				tile * tile = getTile(tileIndex);
-				drawBGTileAt(tile, _x * 8, _y * 8);
-				if (_x * 8 > 144)
-					continue;
+				drawBGTileAt(tile, (scrollX % 8) + _x * 8, (scrollY % 8) + _y * 8);
 			}
-			if (_y * 8 > 160)
-				continue;
 		}
 	}
 	
@@ -113,6 +109,7 @@ public:
 	};
 	uint8_t scrollX, scrollY;
 	uint8_t winPosX, winPosY;
+	uint8_t lyc;
 	struct palette
 	{
 		union {
