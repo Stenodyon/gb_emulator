@@ -107,6 +107,32 @@ public:
 		};
 #pragma pack(pop)
 	};
+	struct _lcd_status
+	{
+		union {
+			uint8_t value;
+#pragma pack(push, 1)
+			struct {
+				uint8_t stat_mode : 2;
+				uint8_t ly_coincidence : 1;
+				uint8_t hblank_int : 1;
+				uint8_t vblank_int : 1;
+				uint8_t oam_int : 1;
+				uint8_t coincidence_int : 1;
+			};
+#pragma pack(pop)
+		};
+
+		_lcd_status& operator=(uint8_t value)
+		{
+			this->value = value & 0x7C; return *this;
+		}
+		operator uint8_t() const
+		{
+			return this->value;
+		}
+	};
+	_lcd_status status;
 	uint8_t scrollX, scrollY;
 	uint8_t winPosX, winPosY;
 	uint8_t lyc;

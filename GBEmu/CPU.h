@@ -13,6 +13,7 @@
 #include "Serial.h"
 #include "Timer.h"
 #include "Sound.h"
+#include "Joypad.h"
 
 class OpcodeNotImplemented : public std::runtime_error
 {
@@ -40,6 +41,7 @@ private:
 	Serial serial;
 	Timer timer;
 	Sound sound;
+	Joypad joypad;
 	bool running = true;
 	bool interruptsEnabled = true;
 
@@ -116,7 +118,7 @@ public:
 	void cycleWait(uint64_t cycleCount)
 	{
 		uint64_t microseconds = (uint64_t)(cycleCount * 0.23866);
-		std::this_thread::sleep_for(std::chrono::microseconds(microseconds));
+		//std::this_thread::sleep_for(std::chrono::microseconds(microseconds));
 		this->cycleCount += cycleCount;
 	}
 
@@ -175,7 +177,7 @@ public:
 			getchar();
 		}
 		uint8_t instr = nextB();
-		std::cout << "[" << hex<uint16_t>(currentPointer) << "] " << hex<uint8_t>(instr) << std::endl;
+		//std::cout << "[" << hex<uint16_t>(currentPointer) << "] " << hex<uint8_t>(instr) << std::endl;
 		switch (instr)
 		{
 		case 0x00: // NOP
@@ -188,7 +190,16 @@ public:
 			cycleWait(12);
 			break;
 		}
-		case 0x08: // LD B, d8
+		case 0x05: // DEC B
+		{
+			regs.Hf = halfcarry(regs.B, 0xFF);
+			regs.B -= 1;
+			regs.Zf = regs.B == 0;
+			regs.Nf = 1;
+			cycleWait(4);
+			break;
+		}
+		case 0x06: // LD B, d8
 		{
 			uint8_t value = nextB();
 			regs.B = value;
@@ -199,6 +210,54 @@ public:
 		{
 			regs.BC--;
 			cycleWait(8);
+			break;
+		}
+		case 0x0C: // INC C (with flags)
+		{
+			regs.Hf = halfcarry(regs.C, 0x1);
+			regs.C++;
+			regs.Zf = regs.C == 0x00;
+			regs.Nf = 1;
+			cycleWait(3);
+			break;
+		}
+		case 0x0E: // LD C, d8
+		{
+			uint8_t value = nextB();
+			regs.C = value;
+			cycleWait(8);
+			break;
+		}
+		case 0x15: // DEC D
+		{
+			regs.Hf = halfcarry(regs.D, 0xFF);
+			regs.B -= 1;
+			regs.Zf = regs.D == 0;
+			regs.Nf = 1;
+			cycleWait(4);
+			break;
+		}
+		case 0x1D: // DEC E
+		{
+			regs.Hf = halfcarry(regs.E, 0xFF);
+			regs.B -= 1;
+			regs.Zf = regs.E == 0;
+			regs.Nf = 1;
+			cycleWait(4);
+			break;
+		}
+		case 0x11: // LD DE, d16
+		{
+			uint16_t value = nextW();
+			regs.DE = value;
+			cycleWait(12);
+			break;
+		}
+		case 0x18: // JR r8
+		{
+			uint8_t value = nextB();
+			jumpRelative(value);
+			cycleWait(12);
 			break;
 		}
 		case 0x20: // JR NZ, r8
@@ -223,7 +282,7 @@ public:
 			cycleWait(12);
 			break;
 		}
-		case 0x22: // LDI (HL), A (puts A into (HL) and increment HL)
+		case 0x22: // LDI (HL+), A (puts A into (HL) and increment HL)
 		{
 			ram[regs.HL] = regs.A;
 			regs.HL++;
@@ -232,6 +291,20 @@ public:
 		}
 		case 0x23: // INC HL
 		{
+			regs.HL++;
+			cycleWait(8);
+			break;
+		}
+		case 0x26: // LD H, d8
+		{
+			uint8_t value = nextB();
+			regs.H = value;
+			cycleWait(8);
+			break;
+		}
+		case 0x2A: // LD A, (HL+) (puts (HL) intro A and increment HL)
+		{
+			regs.A = ram[regs.HL];
 			regs.HL++;
 			cycleWait(8);
 			break;
@@ -266,6 +339,12 @@ public:
 		case 0x57: // LD D, A
 		{
 			regs.D = regs.A;
+			cycleWait(4);
+			break;
+		}
+		case 0x6B: // LD L, E
+		{
+			regs.L = regs.E;
 			cycleWait(4);
 			break;
 		}
@@ -345,6 +424,12 @@ public:
 			cycleWait(12);
 			break;
 		}
+		case 0xE2: // LD (C), A
+		{
+			ram[regs.C] = regs.A;
+			cycleWait(8);
+			break;
+		}
 		case 0xE6: // AND d8
 		{
 			uint8_t value = nextB();
@@ -354,6 +439,13 @@ public:
 			regs.Hf = 1;
 			regs.Cf = 0;
 			cycleWait(8);
+			break;
+		}
+		case 0xEA: // LD (a16), A
+		{
+			uint16_t address = nextW();
+			ram[address] = regs.A;
+			cycleWait(16);
 			break;
 		}
 		case 0xF0: // LDH A, (a8)
@@ -438,6 +530,12 @@ public:
 	{
 		switch (port)
 		{
+		case 0x00: // Joypad
+		{
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to joypad" << std::endl;
+			joypad.joypad = value;
+			break;
+		}
 		case 0x01: // Serial Data
 		{
 			std::cout << "Wrote " << hex<uint8_t>(value) << " to serial data" << std::endl;
@@ -592,6 +690,12 @@ public:
 		{
 			std::cout << "Wrote " << hex<uint8_t>(value) << " to display control" << std::endl;
 			display.control = value;
+			break;
+		}
+		case 0x41: // Display - LCD Status
+		{
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to display status" << std::endl;
+			display.status = value;
 			break;
 		}
 		case 0x42: // Display - Scroll Y

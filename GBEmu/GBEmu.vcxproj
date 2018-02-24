@@ -156,6 +156,7 @@
   <ItemGroup>
     <ClInclude Include="CPU.h" />
     <ClInclude Include="Display.h" />
+    <ClInclude Include="Joypad.h" />
     <ClInclude Include="Program.h" />
     <ClInclude Include="RAM.h" />
     <ClInclude Include="registers.h" />
@@ -169,6 +170,7 @@
     <ClCompile Include="CPU.cpp" />
     <ClCompile Include="Display.cpp" />
     <ClCompile Include="GBEmu.cpp" />
+    <ClCompile Include="Joypad.cpp" />
     <ClCompile Include="Program.cpp" />
     <ClCompile Include="RAM.cpp" />
     <ClCompile Include="registers.cpp" />
