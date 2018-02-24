@@ -177,23 +177,33 @@ public:
 			getchar();
 		}
 		uint8_t instr = nextB();
-		//std::cout << "[" << hex<uint16_t>(currentPointer) << "] " << hex<uint8_t>(instr) << std::endl;
+		std::cout << "[" << hex<uint16_t>(currentPointer) << "] " << hex<uint8_t>(instr) << " ";
 		switch (instr)
 		{
 		case 0x00: // NOP
+			std::cout << "NOP" << std::endl;
 			cycleWait(4);
 			break;
 		case 0x01: // LD BC, d16
 		{
 			uint16_t value = nextW();
+			std::cout << hex<uint16_t>(value) << " LD BC, " << +value << std::endl;
 			regs.BC = value;
 			cycleWait(12);
 			break;
 		}
+		case 0x03: // INC BC
+		{
+			std::cout << "INC BC" << std::endl;
+			regs.BC++;
+			cycleWait(8);
+			break;
+		}
 		case 0x05: // DEC B
 		{
+			std::cout << "DEC B" << std::endl;
 			regs.Hf = halfcarry(regs.B, 0xFF);
-			regs.B -= 1;
+			regs.B--;
 			regs.Zf = regs.B == 0;
 			regs.Nf = 1;
 			cycleWait(4);
@@ -202,18 +212,21 @@ public:
 		case 0x06: // LD B, d8
 		{
 			uint8_t value = nextB();
+			std::cout << hex<uint8_t>(value) << " LD B, " << +value << std::endl;
 			regs.B = value;
 			cycleWait(8);
 			break;
 		}
 		case 0x0B: // DEC BC
 		{
+			std::cout << "DEC BC" << std::endl;
 			regs.BC--;
 			cycleWait(8);
 			break;
 		}
 		case 0x0C: // INC C (with flags)
 		{
+			std::cout << "INC C" << std::endl;
 			regs.Hf = halfcarry(regs.C, 0x1);
 			regs.C++;
 			regs.Zf = regs.C == 0x00;
@@ -224,46 +237,83 @@ public:
 		case 0x0E: // LD C, d8
 		{
 			uint8_t value = nextB();
+			std::cout << hex<uint8_t>(value) << " LD C, " << +value << std::endl;
 			regs.C = value;
 			cycleWait(8);
-			break;
-		}
-		case 0x15: // DEC D
-		{
-			regs.Hf = halfcarry(regs.D, 0xFF);
-			regs.B -= 1;
-			regs.Zf = regs.D == 0;
-			regs.Nf = 1;
-			cycleWait(4);
-			break;
-		}
-		case 0x1D: // DEC E
-		{
-			regs.Hf = halfcarry(regs.E, 0xFF);
-			regs.B -= 1;
-			regs.Zf = regs.E == 0;
-			regs.Nf = 1;
-			cycleWait(4);
 			break;
 		}
 		case 0x11: // LD DE, d16
 		{
 			uint16_t value = nextW();
+			std::cout << hex<uint16_t>(value) << " LD DE, " << +value << std::endl;
 			regs.DE = value;
 			cycleWait(12);
+			break;
+		}
+		case 0x13: // INC DE
+		{
+			std::cout << "INC DE" << std::endl;
+			regs.DE++;
+			cycleWait(8);
+			break;
+		}
+		case 0x15: // DEC D
+		{
+			std::cout << "DEC D" << std::endl;
+			regs.Hf = halfcarry(regs.D, 0xFF);
+			regs.D--;
+			regs.Zf = regs.D == 0;
+			regs.Nf = 1;
+			cycleWait(4);
+			break;
+		}
+		case 0x16: // LD D, d8
+		{
+			uint8_t value = nextB();
+			std::cout << hex<uint8_t>(value) << " LD D, " << +value << std::endl;
+			regs.D = value;
+			cycleWait(8);
 			break;
 		}
 		case 0x18: // JR r8
 		{
 			uint8_t value = nextB();
+			std::cout << hex<uint8_t>(value) << " JR " << +(int8_t)value << std::endl;
 			jumpRelative(value);
 			cycleWait(12);
+			break;
+		}
+		case 0x1A: // LD A, (DE)
+		{
+			std::cout << "LD A, (DE)" << std::endl;
+			uint8_t value = ram[regs.DE];
+			regs.A = value;
+			cycleWait(8);
+			break;
+		}
+		case 0x1D: // DEC E
+		{
+			std::cout << "DEC E" << std::endl;
+			regs.Hf = halfcarry(regs.E, 0xFF);
+			regs.E--;
+			regs.Zf = regs.E == 0;
+			regs.Nf = 1;
+			cycleWait(4);
+			break;
+		}
+		case 0x1F: // RRA (= RR A)
+		{
+			std::cout << "RRA" << std::endl;
+			RR(regs.A);
+			regs.Zf = 0;
+			cycleWait(4);
 			break;
 		}
 		case 0x20: // JR NZ, r8
 		{
 			//regs.dump();
 			uint8_t jump = nextB();
+			std::cout << hex<uint8_t>(jump) << " JR NZ, " << +(int8_t)jump << std::endl;
 			if (!regs.Zf)
 			{
 				jumpRelative(jump);
@@ -278,12 +328,14 @@ public:
 		case 0x21: // LD HL, d16
 		{
 			uint16_t value = nextW();
+			std::cout << hex<uint16_t>(value) << " LD HL, " << +value << std::endl;
 			regs.HL = value;
 			cycleWait(12);
 			break;
 		}
-		case 0x22: // LDI (HL+), A (puts A into (HL) and increment HL)
+		case 0x22: // LD (HL+), A (puts A into (HL) and increment HL)
 		{
+			std::cout << "LD (HL+), A" << std::endl;
 			ram[regs.HL] = regs.A;
 			regs.HL++;
 			cycleWait(8);
@@ -291,77 +343,341 @@ public:
 		}
 		case 0x23: // INC HL
 		{
+			std::cout << "INC HL" << std::endl;
 			regs.HL++;
 			cycleWait(8);
+			break;
+		}
+		case 0x24: // INC H
+		{
+			std::cout << "INC H" << std::endl;
+			regs.Hf = halfcarry(regs.H, 0x01);
+			regs.H++;
+			regs.Zf = regs.H == 0;
+			regs.Nf = 0;
+			cycleWait(4);
+			break;
+		}
+		case 0x25: // DEC H
+		{
+			std::cout << "DEC H" << std::endl;
+			regs.Hf = halfcarry(regs.H, 0xFF);
+			regs.H--;
+			regs.Zf = regs.H == 0;
+			regs.Nf = 1;
+			cycleWait(4);
 			break;
 		}
 		case 0x26: // LD H, d8
 		{
 			uint8_t value = nextB();
+			std::cout << hex<uint8_t>(value) << " LD H, " << +value << std::endl;
 			regs.H = value;
+			cycleWait(8);
+			break;
+		}
+		case 0x28: // JR Z, r8
+		{
+			uint8_t jump = nextB();
+			std::cout << hex<uint8_t>(jump) << " JR Z, " << +(int8_t)jump << std::endl;
+			if (regs.Zf)
+			{
+				jumpRelative(jump);
+				cycleWait(12);
+			}
+			else
+			{
+				cycleWait(8);
+			}
+			break;
+		}
+		case 0x29: // ADD HL, HL
+		{
+			std::cout << "ADD HL, HL" << std::endl;
+			regs.Hf = halfcarry(regs.HL, regs.HL);
+			regs.Cf = ((uint64_t)regs.HL * 2) > 0xFFFF;
+			regs.HL += regs.HL;
+			regs.Nf = 0;
 			cycleWait(8);
 			break;
 		}
 		case 0x2A: // LD A, (HL+) (puts (HL) intro A and increment HL)
 		{
+			std::cout << "LD A, (HL+)" << std::endl;
 			regs.A = ram[regs.HL];
 			regs.HL++;
 			cycleWait(8);
 			break;
 		}
+		case 0x2C: // INC L
+		{
+			regs.Hf = halfcarry(regs.L, 0x01);
+			regs.L++;
+			regs.Zf = regs.L == 0;
+			regs.Nf = 1;
+			cycleWait(4);
+			std::cout << "INC L (" << hex<uint8_t>(regs.L) << ") Z flag: " << (bool)(regs.Zf) << std::endl;
+			break;
+		}
+		case 0x2D: // DEC L
+		{
+			std::cout << "DEC L" << std::endl;
+			regs.Hf = halfcarry(regs.L, 0xFF);
+			regs.L--;
+			regs.Zf = regs.L == 0;
+			regs.Nf = 1;
+			cycleWait(4);
+			break;
+		}
+		case 0x30: // JR NC, r8
+		{
+			//regs.dump();
+			uint8_t jump = nextB();
+			std::cout << hex<uint8_t>(jump) << " JR NC, " << +(int8_t)jump << std::endl;
+			if (!regs.Cf)
+			{
+				jumpRelative(jump);
+				cycleWait(12);
+			}
+			else
+			{
+				cycleWait(8);
+			}
+			break;
+		}
 		case 0x31: // LD SP, d16
 		{
 			uint16_t value = nextW();
+			std::cout << hex<uint16_t>(value) << " LD SP, " << +value << std::endl;
 			regs.SP = value;
+			cycleWait(12);
+			break;
+		}
+		case 0x32: // LD (HL-), A
+		{
+			std::cout << "LD (HL-), A" << std::endl;
+			ram[regs.HL] = regs.A;
+			regs.HL--;
+			cycleWait(8);
+			break;
+		}
+		case 0x35: // DEC (HL)
+		{
+			std::cout << "DEC (HL)" << std::endl;
+			uint8_t value = ram[regs.HL];
+			regs.Hf = halfcarry(value, 0xFF);
+			value--;
+			regs.Zf = value == 0;
+			regs.Nf = 1;
+			ram[regs.HL] = value;
 			cycleWait(12);
 			break;
 		}
 		case 0x36: // LD (HL), d8
 		{
 			uint8_t value = nextB();
+			std::cout << hex<uint16_t>(value) << " LD (HL), " << +value << std::endl;
 			ram[regs.HL] = value;
 			cycleWait(12);
+			break;
+		}
+		case 0x3D: // DEC A
+		{
+			std::cout << "DEC A" << std::endl;
+			regs.Hf = halfcarry(regs.A, 0xFF);
+			regs.A--;
+			regs.Zf = regs.A == 0;
+			regs.Nf = 1;
+			cycleWait(4);
 			break;
 		}
 		case 0x3E: // LD A, d8
 		{
 			int8_t value = nextB();
+			std::cout << hex<uint8_t>(value) << " LD A, " << +value << std::endl;
 			regs.A = value;
+			cycleWait(8);
+			break;
+		}
+		case 0x42: // LD B, D
+		{
+			std::cout << "LD B, D" << std::endl;
+			regs.B = regs.D;
+			cycleWait(4);
+			break;
+		}
+		case 0x46: // LD B, (HL)
+		{
+			std::cout << "LD B, (HL)" << std::endl;
+			regs.B = ram[regs.HL];
 			cycleWait(8);
 			break;
 		}
 		case 0x47: // LD B, A
 		{
+			std::cout << "LD B, A" << std::endl;
 			regs.B = regs.A;
 			cycleWait(4);
 			break;
 		}
+		case 0x4E: // LD C, (HL)
+		{
+			std::cout << "LD C, (HL)" << std::endl;
+			regs.C = ram[regs.HL];
+			cycleWait(8);
+			break;
+		}
+		case 0x4F: // LD C, A
+		{
+			std::cout << "LD C, A" << std::endl;
+			regs.C = regs.A;
+			cycleWait(4);
+			break;
+		}
+		case 0x56: // LD D, (HL)
+		{
+			std::cout << "LD D, (HL)" << std::endl;
+			regs.D = ram[regs.HL];
+			cycleWait(8);
+			break;
+		}
 		case 0x57: // LD D, A
 		{
+			std::cout << "LD D, A" << std::endl;
 			regs.D = regs.A;
+			cycleWait(4);
+			break;
+		}
+		case 0x5F: // LD E, A
+		{
+			std::cout << "LD E, A" << std::endl;
+			regs.E = regs.A;
 			cycleWait(4);
 			break;
 		}
 		case 0x6B: // LD L, E
 		{
+			std::cout << "LD L, E" << std::endl;
 			regs.L = regs.E;
 			cycleWait(4);
 			break;
 		}
+		case 0x6E: // LD L, (HL)
+		{
+			std::cout << "LD L, (HL)" << std::endl;
+			regs.L = ram[regs.HL];
+			cycleWait(8);
+			break;
+		}
+		case 0x6F: // LD L, A
+		{
+			std::cout << "LD L, A" << std::endl;
+			regs.L = regs.A;
+			cycleWait(4);
+			break;
+		}
+		case 0x70: // LD (HL), B
+		{
+			std::cout << "LD (HL), B" << std::endl;
+			ram[regs.HL] = regs.B;
+			cycleWait(8);
+			break;
+		}
+		case 0x71: // LD (HL), C
+		{
+			std::cout << "LD (HL), C" << std::endl;
+			ram[regs.HL] = regs.C;
+			cycleWait(8);
+			break;
+		}
+		case 0x72: // LD (HL), D
+		{
+			std::cout << "LD (HL), D" << std::endl;
+			ram[regs.HL] = regs.D;
+			cycleWait(8);
+			break;
+		}
+		case 0x77: // LD (HL), A
+		{
+			std::cout << "LD (HL), A" << std::endl;
+			ram[regs.HL] = regs.A;
+			cycleWait(8);
+			break;
+		}
 		case 0x78: // LD A, B
 		{
+			std::cout << "LD A, B" << std::endl;
 			regs.A = regs.B;
+			cycleWait(4);
+			break;
+		}
+		case 0x79: // LD A, C
+		{
+			std::cout << "LD A, C" << std::endl;
+			regs.A = regs.C;
 			cycleWait(4);
 			break;
 		}
 		case 0x7A: // LD A, D
 		{
+			std::cout << "LD A, D" << std::endl;
 			regs.A = regs.D;
 			cycleWait(4);
 			break;
 		}
+		case 0x7B: // LD A, E
+		{
+			std::cout << "LD A, E" << std::endl;
+			regs.A = regs.E;
+			cycleWait(4);
+			break;
+		}
+		case 0x7C: // LD A, H
+		{
+			std::cout << "LD A, H" << std::endl;
+			regs.A = regs.H;
+			cycleWait(4);
+			break;
+		}
+		case 0x7D: // LD A, L
+		{
+			std::cout << "LD A, L" << std::endl;
+			regs.A = regs.L;
+			cycleWait(4);
+			break;
+		}
+		case 0xA7: // AND A
+		{
+			std::cout << "AND A" << std::endl;
+			regs.A &= regs.A;
+			regs.Zf = regs.A == 0;
+			regs.Nf = 0;
+			regs.Hf = 1;
+			regs.Cf = 0;
+			cycleWait(4);
+			break;
+		}
+		case 0xA9: // XOR C
+		{
+			std::cout << "XOR C" << std::endl;
+			regs.A ^= regs.C;
+			regs.Zf = regs.A == 0;
+			regs.Nf = regs.Hf = regs.Cf = 0;
+			cycleWait(4);
+			break;
+		}
+		case 0xAE: // XOR (HL)
+		{
+			std::cout << "XOR (HL)" << std::endl;
+			regs.A ^= (uint8_t)ram[regs.HL];
+			regs.Zf = regs.A == 0;
+			regs.Nf = regs.Hf = regs.Cf = 0;
+			cycleWait(8);
+			break;
+		}
 		case 0xAF: // XOR A
 		{
+			std::cout << "XOR A" << std::endl;
 			regs.A ^= regs.A;
 			regs.Zf = regs.Nf = regs.Hf = regs.Cf = 0;
 			cycleWait(4);
@@ -369,24 +685,104 @@ public:
 		}
 		case 0xB1: // OR C
 		{
+			std::cout << "OR C" << std::endl;
 			regs.A |= regs.C;
 			regs.Zf = regs.A == 0;
 			regs.Nf = regs.Hf = regs.Cf = 0;
 			cycleWait(4);
 			break;
 		}
+		case 0xB6: // OR (HL)
+		{
+			std::cout << "OR (HL)" << std::endl;
+			regs.A |= (uint8_t)ram[regs.HL];
+			regs.Zf = regs.A == 0;
+			regs.Nf = regs.Hf = regs.Cf = 0;
+			cycleWait(8);
+			break;
+		}
+		case 0xB7: // OR A
+		{
+			std::cout << "OR A" << std::endl;
+			regs.A |= regs.A;
+			regs.Zf = regs.A == 0;
+			regs.Nf = regs.Hf = regs.Cf = 0;
+			cycleWait(4);
+			break;
+		}
+		case 0xC1: // POP BC
+		{
+			std::cout << "POP BC" << std::endl;
+			uint16_t value = pop();
+			regs.BC = value;
+			cycleWait(12);
+			break;
+		}
 		case 0xC3: // JP a16
 		{
 			uint16_t jumpAddress = nextW();
+			std::cout << hex<uint16_t>(jumpAddress) << " JP " << hex<uint16_t>(jumpAddress) << std::endl;
 			jump(jumpAddress);
 			cycleWait(16);
 			break;
 		}
+		case 0xC4: // CALL NZ, a16
+		{
+			uint16_t jumpAddress = nextW();
+			std::cout << hex<uint16_t>(jumpAddress) << " CALL NZ, " << hex<uint16_t>(jumpAddress) << std::endl;
+			if (!regs.Zf)
+			{
+				uint16_t returnAddress = regs.PC;
+				push(returnAddress);
+				jump(jumpAddress);
+				cycleWait(24);
+			}
+			else
+			{
+				cycleWait(12);
+			}
+			break;
+		}
+		case 0xC5: // PUSH BC
+		{
+			std::cout << "PUSH BC" << std::endl;
+			push(regs.BC);
+			cycleWait(16);
+			break;
+		}
+		case 0xC6: // ADD A, d8
+		{
+			uint8_t value = nextB();
+			std::cout << hex<uint8_t>(value) << " ADD A, " << +value << std::endl;
+			regs.Hf = halfcarry(regs.A, value);
+			regs.Cf = ((uint64_t)regs.A + value) > 0xFF;
+			regs.A += value;
+			regs.Zf = regs.A == 0;
+			regs.Nf = 0;
+			cycleWait(8);
+			break;
+		}
 		case 0xC9: // RET
 		{
+			std::cout << "RET" << std::endl;
 			uint16_t returnAddress = pop();
 			jump(returnAddress);
 			cycleWait(16);
+			break;
+		}
+		case 0xCA: // JP Z, a16
+		{
+			uint16_t address = nextW();
+			std::cout << hex<uint16_t>(address) << " JP Z, " << hex<uint16_t>(address) << std::endl;
+			if (regs.Zf)
+			{
+				cycleWait(16);
+				jump(address);
+			}
+			else
+			{
+				cycleWait(12);
+			}
 			break;
 		}
 		case 0xCB: // Prefix CB
@@ -398,41 +794,102 @@ public:
 		case 0xCD: // CALL a16
 		{
 			uint16_t jumpAddress = nextW();
+			std::cout << hex<uint16_t>(jumpAddress) << " CALL " << hex<uint16_t>(jumpAddress) << std::endl;
 			uint16_t returnAddress = regs.PC;
 			push(returnAddress);
 			jump(jumpAddress);
 			cycleWait(24);
 			break;
 		}
+		case 0xCE: // ADC A, d8
+		{
+			uint8_t value = nextB();
+			std::cout << hex<uint8_t>(value) << " ADC A, " << +value << std::endl;
+			uint8_t carry = regs.Cf;
+			regs.Hf = halfcarry(regs.A, value + carry);
+			regs.Cf = ((uint64_t)regs.A + value + carry) > 0xFF;
+			regs.A += value + carry;
+			regs.Zf = regs.A == 0;
+			regs.Nf = 0;
+			cycleWait(8);
+			break;
+		}
+		case 0xD0: // RET NC
+		{
+			std::cout << "RET NC" << std::endl;
+			if (!regs.Nf)
+			{
+				uint16_t returnAddress = pop();
+				jump(returnAddress);
+				cycleWait(20);
+			}
+			else
+			{
+				cycleWait(8);
+			}
+			break;
+		}
 		case 0xD1: // POP DE
 		{
+			std::cout << "POP DE" << std::endl;
 			regs.DE = pop();
 			cycleWait(12);
 			break;
 		}
 		case 0xD5: // PUSH DE
 		{
+			std::cout << "PUSH DE" << std::endl;
 			push(regs.DE);
 			cycleWait(16);
+			break;
+		}
+		case 0xD6: // SUB d8
+		{
+			uint8_t value = nextB();
+			std::cout << hex<uint8_t>(value) << " SUB " << +value << std::endl;
+			regs.Hf = halfcarry(regs.A, ~value + 1);
+			regs.Cf = ((int64_t)regs.A - value) < 0;
+			regs.A -= value;
+			regs.Zf = regs.A == 0;
+			regs.Nf = 1;
+			cycleWait(8);
 			break;
 		}
 		case 0xE0: // LDH (a8), A
 		{
 			uint8_t nextVal = nextB();
 			uint16_t value = 0xFF00 + nextVal;
+			std::cout << hex<uint8_t>(nextVal) << " LD (" << hex<uint16_t>(value) << "), A" << std::endl;
 			ram[value] = regs.A;
+			cycleWait(12);
+			break;
+		}
+		case 0xE1: // POP HL
+		{
+			std::cout << "POP HL" << std::endl;
+			uint16_t value = pop();
+			regs.HL = value;
 			cycleWait(12);
 			break;
 		}
 		case 0xE2: // LD (C), A
 		{
+			std::cout << "LD (C), A" << std::endl;
 			ram[regs.C] = regs.A;
 			cycleWait(8);
+			break;
+		}
+		case 0xE5: // PUSH HL
+		{
+			std::cout << "PUSH HL" << std::endl;
+			push(regs.HL);
+			cycleWait(16);
 			break;
 		}
 		case 0xE6: // AND d8
 		{
 			uint8_t value = nextB();
+			std::cout << hex<uint8_t>(value) << " AND " << hex<uint8_t>(value) << std::endl;
 			regs.A &= value;
 			regs.Zf = regs.A == 0;
 			regs.Nf = 0;
@@ -441,30 +898,75 @@ public:
 			cycleWait(8);
 			break;
 		}
+		case 0xE9: // JP (HL)
+		{
+			std::cout << "JP (HL)" << std::endl;
+			jump(regs.HL);
+			cycleWait(4);
+			break;
+		}
 		case 0xEA: // LD (a16), A
 		{
 			uint16_t address = nextW();
+			std::cout << hex<uint16_t>(address) << " LD (" << hex<uint16_t>(address) << "), A" << std::endl;
 			ram[address] = regs.A;
 			cycleWait(16);
+			break;
+		}
+		case 0xEE: // XOR d8
+		{
+			uint8_t value = nextB();
+			std::cout << hex<uint8_t>(value) << " XOR " << hex<uint8_t>(value) << std::endl;
+			regs.A ^= value;
+			regs.Zf = regs.A == 0;
+			regs.Nf = regs.Hf = regs.Cf = 0;
+			cycleWait(8);
 			break;
 		}
 		case 0xF0: // LDH A, (a8)
 		{
 			uint8_t nextVal = nextB();
 			uint16_t value = 0xFF00 + nextVal;
+			std::cout << hex<uint8_t>(nextVal) << " LD A, (" << hex<uint16_t>(value) << ")" << std::endl;
 			regs.A = ram[value];
+			cycleWait(12);
+			break;
+		}
+		case 0xF1: // POP AF
+		{
+			std::cout << "POP AF" << std::endl;
+			uint16_t value = pop();
+			regs.AF = value;
 			cycleWait(12);
 			break;
 		}
 		case 0xF3: // DI Disable Interrupts
 		{
+			std::cout << "DI" << std::endl;
 			interruptsEnabled = false;
 			cycleWait(4);
+			break;
+		}
+		case 0xF5: // PUSH AF
+		{
+			std::cout << "PUSH AF" << std::endl;
+			push(regs.AF);
+			cycleWait(16);
+			break;
+		}
+		case 0xFA: // LD A, (a16)
+		{
+			uint16_t address = nextW();
+			std::cout << hex<uint16_t>(address) << " LD A, (" << hex<uint16_t>(address) << ")" << std::endl;
+			uint8_t value = ram[address];
+			regs.A = value;
+			cycleWait(16);
 			break;
 		}
 		case 0xFE: // CP d8
 		{
 			uint8_t value = nextB();
+			std::cout << hex<uint8_t>(value) << " CP " << +value << std::endl;
 			regs.Zf = regs.A == value;
 			regs.Nf = 1;
 			regs.Hf = halfcarry(regs.A, value);
@@ -474,6 +976,7 @@ public:
 		}
 		case 0xFF: // RST 0x38 (equivalent to CALL 0x38)
 		{
+			std::cout << "RST 0x38" << std::endl;
 			uint16_t returnAddress = nextW();
 			push(returnAddress);
 			jump(0x0038);
@@ -490,14 +993,51 @@ public:
 		}
 	}
 
+	void RR(uint8_t & value)
+	{
+		bool carry = regs.Cf;
+		regs.Cf = value & 0x01;
+		value >>= 1;
+		if (carry)
+			value |= 0x80;
+		regs.Zf = value == 0;
+		regs.Nf = regs.Hf = 0;
+	}
+
 	void prefixCB()
 	{
 		uint16_t currentPointer = regs.PC;
 		uint8_t instr = nextB();
+		std::cout << hex<uint8_t>(instr) << " ";
 		switch (instr)
 		{
+		case 0x19: // RR C
+		{
+			std::cout << "RR C" << std::endl;
+			RR(regs.C);
+			cycleWait(8);
+			break;
+		}
+		case 0x1A: // RR D
+		{
+			std::cout << "RR D" << std::endl;
+			RR(regs.D);
+			cycleWait(8);
+			break;
+		}
+		case 0x38: // SRL B
+		{
+			std::cout << "SRL B" << std::endl;
+			regs.Cf = regs.B & 0x01;
+			regs.B >>= 1;
+			regs.Zf = regs.B == 0;
+			regs.Nf = regs.Hf = 0;
+			cycleWait(8);
+			break;
+		}
 		case 0x87: // RES 0,A
 		{
+			std::cout << "RES 0, A" << std::endl;
 			regs.A = 0;
 			cycleWait(8);
 			break;
@@ -700,13 +1240,13 @@ public:
 		}
 		case 0x42: // Display - Scroll Y
 		{
-			std::cout << "Wrote " << hex<uint8_t>(value) << " to display scroll x" << std::endl;
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to display scroll y" << std::endl;
 			display.scrollY = value;
 			break;
 		}
 		case 0x43: // Display - Scroll X
 		{
-			std::cout << "Wrote " << hex<uint8_t>(value) << " to display scroll y" << std::endl;
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to display scroll x" << std::endl;
 			display.scrollX = value;
 			break;
 		}
@@ -841,7 +1381,7 @@ private:
 	
 	bool halfcarry(uint16_t a, uint16_t b)
 	{
-		return (((a & 0x0F) + (b & 0x0F)) & 0x10) == 0x10;
+		return halfcarry(((uint8_t*)(&a))[1], ((uint8_t*)(&b))[1]);
 	}
 
 	void checkInterrupts()

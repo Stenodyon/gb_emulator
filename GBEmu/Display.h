@@ -14,9 +14,10 @@ struct tile
 	{
 		uint8_t index = pixelIndex >> 3;
 		uint8_t bitIndex = 0x7 - (pixelIndex & 0x7);
-		uint8_t lower = data[index] >> (bitIndex - 1);
-		uint8_t upper = data[index + 1] >> bitIndex;
-		return upper | lower;
+		uint8_t mask = 0x01 << bitIndex;
+		bool lower = data[index] & mask;
+		bool upper = data[index + 1] & mask;
+		return (upper ? 0x2 : 0x0) | (lower ? 0x1 : 0x0);
 	}
 };
 
@@ -45,7 +46,7 @@ private:
 	void drawPixel(uint8_t x, uint8_t y)
 	{
 		SDL_Rect pixel{x * 4, y * 4, 4, 4};
-		SDL_RenderDrawRect(renderer, &pixel);
+		SDL_RenderFillRect(renderer, &pixel);
 	}
 
 	void drawPixel(uint8_t x, uint8_t y, uint8_t color)
@@ -56,7 +57,10 @@ private:
 
 	tile * getTile(uint8_t index)
 	{
-		return (tile*)(ram.memory + 0x8000) + index;
+		if(bg_win_tile_data_select)
+			return (tile*)(ram.memory + 0x8000) + index;
+		else
+			return (tile*)(ram.memory + 0x9000) + (int8_t)index;
 	}
 
 	uint8_t getBackgroundColor(uint8_t color)
@@ -71,22 +75,26 @@ private:
 			for (uint8_t _x = 0; _x < 8; _x++)
 			{
 				uint8_t index = _x + 8 * _y;
-				uint8_t color = getBackgroundColor((*tile)[index]);
-				drawPixel(x, y, color);
+				uint8_t colorIndex = (*tile)[index];
+				uint8_t color = getBackgroundColor(colorIndex);
+				drawPixel(x + _x, y + _y, color);
 			}
 		}
 	}
 
 	void drawBG()
 	{
+		const uint16_t tileData = bg_tilemap_select ? 0x9C000 : 0x9800;
 		for (uint8_t _y = 0; _y < 32; _y++)
 		{
 			for (uint8_t _x = 0; _x < 32; _x++)
 			{
-				uint8_t index = ((_x - scrollX / 8) + 32 * (_y - scrollY / 8) + 1024) % 1024;
-				uint8_t tileIndex = *(ram.memory + 0x9800);
+				uint8_t index = (_x - scrollX / 8 + 32) % 32 + (32 * (_y - scrollY / 8 + 32) % 32);
+				uint8_t tileIndex = *(ram.memory + tileData + index);
+				//uint8_t tileIndex = _x + 32 * _y;
 				tile * tile = getTile(tileIndex);
 				drawBGTileAt(tile, (scrollX % 8) + _x * 8, (scrollY % 8) + _y * 8);
+				//drawBGTileAt(tile, _x * 8, _y * 8);
 			}
 		}
 	}
@@ -194,8 +202,8 @@ public:
 
 	uint8_t LY()
 	{
-		//return (getMicroseconds() / 109) % 154;
-		return 145;
+		return (getMicroseconds() / 109) % 154;
+		//return 144;
 	}
 };
 

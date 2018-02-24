@@ -4,6 +4,7 @@
 
 void Display::update()
 {
+	SDL_SetWindowTitle(win, lcd_display_enable ? "LCD ON" : "LCD OFF");
 	status.ly_coincidence = LY() == lyc;
 	if (status.coincidence_int && status.ly_coincidence)
 		ram.cpu->interrupt(0x48);

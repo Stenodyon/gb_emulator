@@ -112,6 +112,8 @@ private:
 		operator uint8_t() const;
 
 		operator uint16_t() const {
+			if (address >= 0xA000 && address <= 0xBFFF && !ram.ramEnabled)
+				return 0;
 			uint8_t * block = getMemoryBlock();
 			return *(uint16_t*)(block + (address & addressMask));
 		}
@@ -139,7 +141,7 @@ private:
 #ifdef _DEBUG
 		assert(type != MBCType::ROM);
 #endif
-		ramEnabled = (value & 0x0A) == 0x0A;
+		ramEnabled = (value & 0x0F) == 0x0A;
 		std::cout << "External ram " << (ramEnabled ? "enabled" : "disabled") << std::endl;
 	}
 
