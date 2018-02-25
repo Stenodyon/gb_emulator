@@ -167,6 +167,7 @@ public:
 
 	void step()
 	{
+		// TODO: Implement instructions 0x47-0x4F
 		/*
 		static uint64_t counter = 0;
 		if (counter >= 1000)
@@ -212,12 +213,24 @@ public:
 			cycleWait(8);
 			break;
 		}
+		case 0x04: // INC B
+		{
+#ifdef _DEBUG
+			std::cout << "INC B" << std::endl;
+#endif
+			regs.Hf = halfcarry8(regs.B, 0x01);
+			regs.B++;
+			regs.Zf = regs.B == 0;
+			regs.Nf = 0;
+			cycleWait(4);
+			break;
+		}
 		case 0x05: // DEC B
 		{
 #ifdef _DEBUG
 			std::cout << "DEC B" << std::endl;
 #endif
-			regs.Hf = halfcarry(regs.B, 0xFF);
+			regs.Hf = halfcarry8(regs.B, 0xFF);
 			regs.B--;
 			regs.Zf = regs.B == 0;
 			regs.Nf = 1;
@@ -248,11 +261,23 @@ public:
 #ifdef _DEBUG
 			std::cout << "INC C" << std::endl;
 #endif
-			regs.Hf = halfcarry(regs.C, 0x1);
+			regs.Hf = halfcarry8(regs.C, 0x1);
 			regs.C++;
 			regs.Zf = regs.C == 0x00;
 			regs.Nf = 1;
 			cycleWait(3);
+			break;
+		}
+		case 0x0D: // DEC C
+		{
+#ifdef _DEBUG
+			std::cout << "DEC C" << std::endl;
+#endif
+			regs.Hf = halfcarry8(regs.C, 0xFF);
+			regs.C--;
+			regs.Zf = regs.C == 0;
+			regs.Nf = 1;
+			cycleWait(4);
 			break;
 		}
 		case 0x0E: // LD C, d8
@@ -275,6 +300,15 @@ public:
 			cycleWait(12);
 			break;
 		}
+		case 0x12: // LD (DE), A
+		{
+#ifdef _DEBUG
+			std::cout << "LD (DE), A" << std::endl;
+#endif
+			ram[regs.DE] = regs.A;
+			cycleWait(8);
+			break;
+		}
 		case 0x13: // INC DE
 		{
 #ifdef _DEBUG
@@ -284,12 +318,24 @@ public:
 			cycleWait(8);
 			break;
 		}
+		case 0x14: // INC D
+		{
+#ifdef _DEBUG
+			std::cout << "INC D" << std::endl;
+#endif
+			regs.Hf = halfcarry8(regs.D, 0x01);
+			regs.D++;
+			regs.Zf = regs.D == 0;
+			regs.Nf = 0;
+			cycleWait(4);
+			break;
+		}
 		case 0x15: // DEC D
 		{
 #ifdef _DEBUG
 			std::cout << "DEC D" << std::endl;
 #endif
-			regs.Hf = halfcarry(regs.D, 0xFF);
+			regs.Hf = halfcarry8(regs.D, 0xFF);
 			regs.D--;
 			regs.Zf = regs.D == 0;
 			regs.Nf = 1;
@@ -321,7 +367,7 @@ public:
 #ifdef _DEBUG
 			std::cout << "ADD HL, DE" << std::endl;
 #endif
-			regs.Hf = halfcarry(regs.HL, regs.DE);
+			regs.Hf = halfcarry16(regs.HL, regs.DE);
 			regs.Cf = ((uint64_t)regs.HL * regs.DE) > 0xFFFF;
 			regs.HL += regs.DE;
 			regs.Nf = 0;
@@ -347,12 +393,24 @@ public:
 			cycleWait(8);
 			break;
 		}
+		case 0x1C: // INC E
+		{
+#ifdef _DEBUG
+			std::cout << "INC E" << std::endl;
+#endif
+			regs.Hf = halfcarry8(regs.E, 0x1);
+			regs.E++;
+			regs.Zf = regs.E == 0x00;
+			regs.Nf = 1;
+			cycleWait(3);
+			break;
+		}
 		case 0x1D: // DEC E
 		{
 #ifdef _DEBUG
 			std::cout << "DEC E" << std::endl;
 #endif
-			regs.Hf = halfcarry(regs.E, 0xFF);
+			regs.Hf = halfcarry8(regs.E, 0xFF);
 			regs.E--;
 			regs.Zf = regs.E == 0;
 			regs.Nf = 1;
@@ -431,7 +489,7 @@ public:
 #ifdef _DEBUG
 			std::cout << "INC H" << std::endl;
 #endif
-			regs.Hf = halfcarry(regs.H, 0x01);
+			regs.Hf = halfcarry8(regs.H, 0x01);
 			regs.H++;
 			regs.Zf = regs.H == 0;
 			regs.Nf = 0;
@@ -443,7 +501,7 @@ public:
 #ifdef _DEBUG
 			std::cout << "DEC H" << std::endl;
 #endif
-			regs.Hf = halfcarry(regs.H, 0xFF);
+			regs.Hf = halfcarry8(regs.H, 0xFF);
 			regs.H--;
 			regs.Zf = regs.H == 0;
 			regs.Nf = 1;
@@ -482,7 +540,7 @@ public:
 #ifdef _DEBUG
 			std::cout << "ADD HL, HL" << std::endl;
 #endif
-			regs.Hf = halfcarry(regs.HL, regs.HL);
+			regs.Hf = halfcarry16(regs.HL, regs.HL);
 			regs.Cf = ((uint64_t)regs.HL * 2) > 0xFFFF;
 			regs.HL += regs.HL;
 			regs.Nf = 0;
@@ -501,7 +559,7 @@ public:
 		}
 		case 0x2C: // INC L
 		{
-			regs.Hf = halfcarry(regs.L, 0x01);
+			regs.Hf = halfcarry8(regs.L, 0x01);
 			regs.L++;
 			regs.Zf = regs.L == 0;
 			regs.Nf = 1;
@@ -516,11 +574,21 @@ public:
 #ifdef _DEBUG
 			std::cout << "DEC L" << std::endl;
 #endif
-			regs.Hf = halfcarry(regs.L, 0xFF);
+			regs.Hf = halfcarry8(regs.L, 0xFF);
 			regs.L--;
 			regs.Zf = regs.L == 0;
 			regs.Nf = 1;
 			cycleWait(4);
+			break;
+		}
+		case 0x2E: // LD L, d8
+		{
+			uint8_t value = nextB();
+#ifdef _DEBUG
+			std::cout << hex<uint8_t>(value) << "LD L, " << +value << std::endl;
+#endif
+			regs.L = value;
+			cycleWait(8);
 			break;
 		}
 		case 0x30: // JR NC, r8
@@ -567,7 +635,7 @@ public:
 			std::cout << "DEC (HL)" << std::endl;
 #endif
 			uint8_t value = ram[regs.HL];
-			regs.Hf = halfcarry(value, 0xFF);
+			regs.Hf = halfcarry8(value, 0xFF);
 			value--;
 			regs.Zf = value == 0;
 			regs.Nf = 1;
@@ -585,12 +653,42 @@ public:
 			cycleWait(12);
 			break;
 		}
+		case 0x38: // JR C, r8
+		{
+			//regs.dump();
+			uint8_t jump = nextB();
+#ifdef _DEBUG
+			std::cout << hex<uint8_t>(jump) << " JR C, " << +(int8_t)jump << std::endl;
+#endif
+			if (regs.Cf)
+			{
+				jumpRelative(jump);
+				cycleWait(12);
+			}
+			else
+			{
+				cycleWait(8);
+			}
+			break;
+		}
+		case 0x3C: // INC A
+		{
+#ifdef _DEBUG
+			std::cout << "INC A" << std::endl;
+#endif
+			regs.Hf = halfcarry8(regs.A, 0x1);
+			regs.A++;
+			regs.Zf = regs.A == 0x00;
+			regs.Nf = 1;
+			cycleWait(3);
+			break;
+		}
 		case 0x3D: // DEC A
 		{
 #ifdef _DEBUG
 			std::cout << "DEC A" << std::endl;
 #endif
-			regs.Hf = halfcarry(regs.A, 0xFF);
+			regs.Hf = halfcarry8(regs.A, 0xFF);
 			regs.A--;
 			regs.Zf = regs.A == 0;
 			regs.Nf = 1;
@@ -607,12 +705,57 @@ public:
 			cycleWait(8);
 			break;
 		}
+		case 0x40: // LD B, B
+		{
+#ifdef _DEBUG
+			std::cout << "LD B, B" << std::endl;
+#endif
+			regs.B = regs.B;
+			cycleWait(4);
+			break;
+		}
+		case 0x41: // LD B, C
+		{
+#ifdef _DEBUG
+			std::cout << "LD B, C" << std::endl;
+#endif
+			regs.B = regs.C;
+			cycleWait(4);
+			break;
+		}
 		case 0x42: // LD B, D
 		{
 #ifdef _DEBUG
 			std::cout << "LD B, D" << std::endl;
 #endif
 			regs.B = regs.D;
+			cycleWait(4);
+			break;
+		}
+		case 0x43: // LD B, E
+		{
+#ifdef _DEBUG
+			std::cout << "LD B, E" << std::endl;
+#endif
+			regs.B = regs.E;
+			cycleWait(4);
+			break;
+		}
+		case 0x44: // LD B, H
+		{
+#ifdef _DEBUG
+			std::cout << "LD B, H" << std::endl;
+#endif
+			regs.B = regs.H;
+			cycleWait(4);
+			break;
+		}
+		case 0x45: // LD B, L
+		{
+#ifdef _DEBUG
+			std::cout << "LD B, L" << std::endl;
+#endif
+			regs.B = regs.L;
 			cycleWait(4);
 			break;
 		}
@@ -697,6 +840,15 @@ public:
 			cycleWait(4);
 			break;
 		}
+		case 0x62: // LD H, D
+		{
+#ifdef _DEBUG
+			std::cout << "LD H, D" << std::endl;
+#endif
+			regs.H = regs.D;
+			cycleWait(4);
+			break;
+		}
 		case 0x67: // LD H, A
 		{
 #ifdef _DEBUG
@@ -757,6 +909,33 @@ public:
 			std::cout << "LD (HL), D" << std::endl;
 #endif
 			ram[regs.HL] = regs.D;
+			cycleWait(8);
+			break;
+		}
+		case 0x73: // LD (HL), E
+		{
+#ifdef _DEBUG
+			std::cout << "LD (HL), E" << std::endl;
+#endif
+			ram[regs.HL] = regs.E;
+			cycleWait(8);
+			break;
+		}
+		case 0x74: // LD (HL), H
+		{
+#ifdef _DEBUG
+			std::cout << "LD (HL), H" << std::endl;
+#endif
+			ram[regs.HL] = regs.H;
+			cycleWait(8);
+			break;
+		}
+		case 0x75: // LD (HL), L
+		{
+#ifdef _DEBUG
+			std::cout << "LD (HL), L" << std::endl;
+#endif
+			ram[regs.HL] = regs.L;
 			cycleWait(8);
 			break;
 		}
@@ -832,12 +1011,24 @@ public:
 			cycleWait(8);
 			break;
 		}
+		case 0x81: // ADD A, C
+		{
+#ifdef _DEBUG
+			std::cout << "ADD A, C" << std::endl;
+#endif
+			regs.Hf = halfcarry8(regs.A, regs.C);
+			regs.Cf = ((uint64_t)regs.A + regs.C) > 0xFF;
+			regs.A += regs.C;
+			regs.Nf = 0;
+			cycleWait(4);
+			break;
+		}
 		case 0x83: // ADD A, E
 		{
 #ifdef _DEBUG
 			std::cout << "ADD A, E" << std::endl;
 #endif
-			regs.Hf = halfcarry(regs.A, regs.E);
+			regs.Hf = halfcarry8(regs.A, regs.E);
 			regs.Cf = ((uint64_t)regs.A + regs.E) > 0xFF;
 			regs.A += regs.E;
 			regs.Nf = 0;
@@ -849,10 +1040,23 @@ public:
 #ifdef _DEBUG
 			std::cout << "ADD A, A" << std::endl;
 #endif
-			regs.Hf = halfcarry(regs.A, regs.A);
+			regs.Hf = halfcarry8(regs.A, regs.A);
 			regs.Cf = ((uint64_t)regs.A * 2) > 0xFF;
 			regs.A += regs.A;
 			regs.Nf = 0;
+			cycleWait(4);
+			break;
+		}
+		case 0x91: // SUB C
+		{
+#ifdef _DEBUG
+			std::cout << "SUB C" << std::endl;
+#endif
+			regs.Hf = halfcarry8(regs.A, ~regs.C + 1);
+			regs.Cf = ((int64_t)regs.A - regs.C) < 0;
+			regs.A -= regs.C;
+			regs.Zf = regs.A == 0;
+			regs.Nf = 1;
 			cycleWait(4);
 			break;
 		}
@@ -869,12 +1073,67 @@ public:
 			cycleWait(4);
 			break;
 		}
+		case 0xA8: // XOR B
+		{
+#ifdef _DEBUG
+			std::cout << "XOR B" << std::endl;
+#endif
+			regs.A ^= regs.B;
+			regs.Zf = regs.A == 0;
+			regs.Nf = regs.Hf = regs.Cf = 0;
+			cycleWait(4);
+			break;
+		}
 		case 0xA9: // XOR C
 		{
 #ifdef _DEBUG
 			std::cout << "XOR C" << std::endl;
 #endif
 			regs.A ^= regs.C;
+			regs.Zf = regs.A == 0;
+			regs.Nf = regs.Hf = regs.Cf = 0;
+			cycleWait(4);
+			break;
+		}
+		case 0xAA: // XOR D
+		{
+#ifdef _DEBUG
+			std::cout << "XOR D" << std::endl;
+#endif
+			regs.A ^= regs.D;
+			regs.Zf = regs.A == 0;
+			regs.Nf = regs.Hf = regs.Cf = 0;
+			cycleWait(4);
+			break;
+		}
+		case 0xAB: // XOR E
+		{
+#ifdef _DEBUG
+			std::cout << "XOR E" << std::endl;
+#endif
+			regs.A ^= regs.E;
+			regs.Zf = regs.A == 0;
+			regs.Nf = regs.Hf = regs.Cf = 0;
+			cycleWait(4);
+			break;
+		}
+		case 0xAC: // XOR H
+		{
+#ifdef _DEBUG
+			std::cout << "XOR H" << std::endl;
+#endif
+			regs.A ^= regs.H;
+			regs.Zf = regs.A == 0;
+			regs.Nf = regs.Hf = regs.Cf = 0;
+			cycleWait(4);
+			break;
+		}
+		case 0xAD: // XOR L
+		{
+#ifdef _DEBUG
+			std::cout << "XOR L" << std::endl;
+#endif
+			regs.A ^= regs.L;
 			regs.Zf = regs.A == 0;
 			regs.Nf = regs.Hf = regs.Cf = 0;
 			cycleWait(4);
@@ -989,6 +1248,18 @@ public:
 			cycleWait(4);
 			break;
 		}
+		case 0xBB: // CP E
+		{
+#ifdef _DEBUG
+			std::cout << "CP E" << std::endl;
+#endif
+			regs.Zf = regs.A == regs.E;
+			regs.Nf = 1;
+			regs.Hf = halfcarry8(regs.A, ~regs.E + 1);
+			regs.Cf = regs.A < regs.E;
+			cycleWait(8);
+			break;
+		}
 		case 0xC1: // POP BC
 		{
 #ifdef _DEBUG
@@ -997,6 +1268,23 @@ public:
 			uint16_t value = pop();
 			regs.BC = value;
 			cycleWait(12);
+			break;
+		}
+		case 0xC2: // JP NZ, a16
+		{
+			uint16_t jumpAddress = nextW();
+#ifdef _DEBUG
+			std::cout << hex<uint16_t>(jumpAddress) << " JP NZ, " << hex<uint16_t>(jumpAddress) << std::endl;
+#endif
+			if (!regs.Zf)
+			{
+				cycleWait(16);
+				jump(jumpAddress);
+			}
+			else
+			{
+				cycleWait(12);
+			}
 			break;
 		}
 		case 0xC3: // JP a16
@@ -1043,7 +1331,7 @@ public:
 #ifdef _DEBUG
 			std::cout << hex<uint8_t>(value) << " ADD A, " << +value << std::endl;
 #endif
-			regs.Hf = halfcarry(regs.A, value);
+			regs.Hf = halfcarry8(regs.A, value);
 			regs.Cf = ((uint64_t)regs.A + value) > 0xFF;
 			regs.A += value;
 			regs.Zf = regs.A == 0;
@@ -1120,7 +1408,7 @@ public:
 			std::cout << hex<uint8_t>(value) << " ADC A, " << +value << std::endl;
 #endif
 			uint8_t carry = regs.Cf;
-			regs.Hf = halfcarry(regs.A, value + carry);
+			regs.Hf = halfcarry8(regs.A, value + carry);
 			regs.Cf = ((uint64_t)regs.A + value + carry) > 0xFF;
 			regs.A += value + carry;
 			regs.Zf = regs.A == 0;
@@ -1169,12 +1457,29 @@ public:
 #ifdef _DEBUG
 			std::cout << hex<uint8_t>(value) << " SUB " << +value << std::endl;
 #endif
-			regs.Hf = halfcarry(regs.A, ~value + 1);
+			regs.Hf = halfcarry8(regs.A, ~value + 1);
 			regs.Cf = ((int64_t)regs.A - value) < 0;
 			regs.A -= value;
 			regs.Zf = regs.A == 0;
 			regs.Nf = 1;
 			cycleWait(8);
+			break;
+		}
+		case 0xD8: // RET C
+		{
+#ifdef _DEBUG
+			std::cout << "RET C" << std::endl;
+#endif
+			if (regs.Cf)
+			{
+				cycleWait(20);
+				uint16_t returnAddress = pop();
+				jump(returnAddress);
+			}
+			else
+			{
+				cycleWait(8);
+			}
 			break;
 		}
 		case 0xE0: // LDH (a8), A
@@ -1300,6 +1605,40 @@ public:
 			cycleWait(16);
 			break;
 		}
+		case 0xF6: // OR d8
+		{
+			uint8_t value = nextB();
+#ifdef _DEBUG
+			std::cout << hex<uint8_t>(value) << " OR " << hex<uint8_t>(value) << std::endl;
+#endif
+			regs.A |= value;
+			regs.Zf = regs.A == 0;
+			regs.Nf = regs.Hf = regs.Cf;
+			cycleWait(8);
+			break;
+		}
+		case 0xF8: // LD HL, SP+r8
+		{
+			int8_t value = nextB();
+#ifdef _DEBUG
+			std::cout << hex<uint8_t>(value) << " LD HL, SP + " << +value << std::endl;
+#endif
+			regs.Hf = halfcarryM(regs.SP, value);
+			regs.Cf = ((int64_t)regs.SP + value) > 0xFFFF;
+			regs.HL = regs.SP + value;
+			regs.Zf = regs.Nf = 0;
+			cycleWait(12);
+			break;
+		}
+		case 0xF9: // LD SP, HL
+		{
+#ifdef _DEBUG
+			std::cout << " LD SP, HL " << std::endl;
+#endif
+			regs.SP = regs.HL;
+			cycleWait(8);
+			break;
+		}
 		case 0xFA: // LD A, (a16)
 		{
 			uint16_t address = nextW();
@@ -1328,7 +1667,7 @@ public:
 #endif
 			regs.Zf = regs.A == value;
 			regs.Nf = 1;
-			regs.Hf = halfcarry(regs.A, value);
+			regs.Hf = halfcarry8(regs.A, value);
 			regs.Cf = regs.A < value;
 			cycleWait(8);
 			break;
@@ -1393,6 +1732,28 @@ public:
 			cycleWait(8);
 			break;
 		}
+		case 0x1B: // RR E
+		{
+#ifdef _DEBUG
+			std::cout << "RR E" << std::endl;
+#endif
+			RR(regs.E);
+			cycleWait(8);
+			break;
+		}
+		case 0x37: // SWAP A
+		{
+#ifdef _DEBUG
+			std::cout << "SWAP A" << std::endl;
+#endif
+			uint8_t bottom = (regs.A & 0x0F << 4);
+			regs.A >>= 4;
+			regs.A |= bottom;
+			regs.Zf = regs.A == 0;
+			regs.Nf = regs.Hf = regs.Cf = 0;
+			cycleWait(8);
+			break;
+		}
 		case 0x38: // SRL B
 		{
 #ifdef _DEBUG
@@ -1401,6 +1762,18 @@ public:
 			regs.Cf = regs.B & 0x01;
 			regs.B >>= 1;
 			regs.Zf = regs.B == 0;
+			regs.Nf = regs.Hf = 0;
+			cycleWait(8);
+			break;
+		}
+		case 0x3F: // SRL A
+		{
+#ifdef _DEBUG
+			std::cout << "SRL A" << std::endl;
+#endif
+			regs.Cf = regs.A & 0x01;
+			regs.A >>= 1;
+			regs.Zf = regs.A == 0;
 			regs.Nf = regs.Hf = 0;
 			cycleWait(8);
 			break;
@@ -1427,6 +1800,7 @@ public:
 		}
 		default:
 		{
+			std::cerr << "ERR: 0xCB " << hex<uint8_t>(instr) << std::endl;
 			std::ostringstream sstream;
 			sstream << "0xCB 0x" << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << +instr << std::nouppercase;
 			sstream << " at address 0x" << std::uppercase << std::setfill('0') << std::setw(4) << std::hex << +currentPointer;
@@ -1461,13 +1835,13 @@ public:
 		}
 		case 0x01: // Serial Data
 		{
-			std::cout << "Wrote " << hex<uint8_t>(value) << " to serial data" << std::endl;
+			//std::cout << "Wrote " << hex<uint8_t>(value) << " to serial data" << std::endl;
 			serial.data = value;
 			break;
 		}
 		case 0x02: // Serial Tranfer Control
 		{
-			std::cout << "Wrote " << hex<uint8_t>(value) << " to serial control" << std::endl;
+			//std::cout << "Wrote " << hex<uint8_t>(value) << " to serial control" << std::endl;
 			serial.control = value;
 			break;
 		}
@@ -1517,6 +1891,12 @@ public:
 		{
 			std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 1 volume envelope register" << std::endl;
 			sound.c1_envelope = value;
+			break;
+		}
+		case 0x13: // Sound - Channel 1 Frequency Low
+		{
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 1 frequency low register" << std::endl;
+			sound.c1_frequency.lower = value;
 			break;
 		}
 		case 0x14: // Sound - Channel 1 Frequency High
@@ -1687,7 +2067,8 @@ public:
 
 	uint8_t OnIORead(uint8_t port)
 	{
-		std::cout << "Reading from IO port " << hex<uint8_t>(port) << std::endl;
+		if(port != 0x01 && port != 0x02)
+			std::cout << "Reading from IO port " << hex<uint8_t>(port) << std::endl;
 		switch (port)
 		{
 		case 0x00: // Keypad
@@ -1761,14 +2142,19 @@ public:
 	}
 
 private:
-	bool halfcarry(uint8_t a, uint8_t b)
+	bool halfcarry8(uint8_t a, uint8_t b)
 	{
 		return (((a & 0x0F) + (b & 0x0F)) & 0x10) == 0x10;
 	}
 	
-	bool halfcarry(uint16_t a, uint16_t b)
+	bool halfcarry16(uint16_t a, uint16_t b)
 	{
-		return halfcarry(((uint8_t*)(&a))[1], ((uint8_t*)(&b))[1]);
+		return halfcarry8(((uint8_t*)(&a))[1], ((uint8_t*)(&b))[1]);
+	}
+
+	bool halfcarryM(uint16_t a, uint8_t b)
+	{
+		return halfcarry8(((uint8_t*)(&a))[1], b);
 	}
 
 	void checkInterrupts()

@@ -4,7 +4,14 @@
 
 void Display::update()
 {
-	SDL_SetWindowTitle(win, lcd_display_enable ? "LCD ON" : "LCD OFF");
+	std::string title = lcd_display_enable ? "LCD ON" : "LCD OFF";
+	title += " | ";
+	title += bg_win_tile_data_select ? "LOW TILE DATA" : "HIGH TILE DATA";
+	title += " | ";
+	title += bg_tilemap_select ? "BG HIGH TILEMAP" : "BG LOW TILEMAP";
+	title += " | ";
+	title += win_display_enable ? "WINDOW ENABLED" : "WINDOW DISABLED";
+	SDL_SetWindowTitle(win, title.c_str());
 	status.ly_coincidence = LY() == lyc;
 	if (status.coincidence_int && status.ly_coincidence)
 		ram.cpu->interrupt(0x48);
@@ -32,4 +39,7 @@ void Display::update()
 			ram.cpu->interrupt(0x48);
 		lastCycle = ram.cpu->cycleCount;
 	}
+
+	SDL_Event e;
+	while (SDL_PollEvent(&e));
 }

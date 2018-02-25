@@ -85,11 +85,11 @@ private:
 	void drawBG()
 	{
 		const uint16_t tileData = bg_tilemap_select ? 0x9C000 : 0x9800;
-		for (uint8_t _y = 0; _y < 32; _y++)
+		for (uint8_t _y = 0; _y < 21; _y++)
 		{
-			for (uint8_t _x = 0; _x < 32; _x++)
+			for (uint8_t _x = 0; _x < 19; _x++)
 			{
-				uint8_t index = (_x - scrollX / 8 + 32) % 32 + (32 * (_y - scrollY / 8 + 32) % 32);
+				uint8_t index = ((_x + scrollX / 8 + 32) % 32 + 32 * ((_y + scrollY / 8 + 32) % 32)) % (32 * 32);
 				uint8_t tileIndex = *(ram.memory + tileData + index);
 				//uint8_t tileIndex = _x + 32 * _y;
 				tile * tile = getTile(tileIndex);

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <fstream>
+
 class CPU;
 
 enum MBCType
@@ -81,6 +83,8 @@ private:
 		template <typename T>
 		cell_assignment& assign(T value)
 		{
+			if (address == 0xFF02 && value == 0x81)
+				std::cout << (char)(uint8_t)ram[0xFF01];
 			if (address >= 0x8000 && address <= 0x9FFF
 				|| address >= 0xA000 && address <= 0xBFFF && ram.ramEnabled
 				|| address >= 0xC000 && address <= 0xDFFF
@@ -210,7 +214,9 @@ public:
 		}
 	}
 
-	~RAM() {}
+	~RAM()
+	{
+	}
 
 	cell_assignment operator[](uint16_t address)
 	{
