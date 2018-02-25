@@ -156,14 +156,15 @@ public:
 
 	void push(uint16_t value)
 	{
-		ram[regs.SP - 1] = value;
 		regs.SP -= 2;
+		ram[regs.SP] = value;
 	}
 
 	uint16_t pop()
 	{
+		uint16_t value = ram[regs.SP];
 		regs.SP += 2;
-		return ram[regs.SP - 1];
+		return value;
 	}
 
 	void step();
@@ -179,6 +180,24 @@ public:
 			value |= 0x80;
 		regs.Zf = value == 0;
 		regs.Nf = regs.Hf = 0;
+	}
+
+	inline void ADD(uint8_t value)
+	{
+		regs.Hf = halfcarry8(regs.A, value);
+		regs.Cf = ((uint64_t)regs.A + value) > 0xFF;
+		regs.A += value;
+		regs.Nf = 0;
+	}
+
+	inline void ADC(uint8_t value)
+	{
+		uint8_t carry = regs.Cf;
+		regs.Hf = ((regs.A & 0x0F) + (value & 0x0F) + carry) > 0x0F;
+		regs.Cf = ((uint64_t)regs.A + (uint64_t)value + carry) > 0xFF;
+		regs.A += value + carry;
+		regs.Zf = regs.A == 0;
+		regs.Nf = 0;
 	}
 
 public:
