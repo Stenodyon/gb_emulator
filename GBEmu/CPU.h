@@ -200,6 +200,57 @@ public:
 		regs.Nf = 0;
 	}
 
+	inline void SUB(uint8_t value)
+	{
+		regs.Hf = halfcarry_sub(regs.A, value);
+		regs.Cf = regs.A < value;
+		regs.A -= value;
+		regs.Zf = regs.A == 0;
+		regs.Nf = 1;
+	}
+
+	inline void SBC(uint8_t value)
+	{
+		uint8_t carry = regs.Cf;
+		regs.Hf = (uint64_t)(regs.A & 0xF) < (((uint64_t)value & 0xF) + carry);
+		regs.Cf = ((int64_t)regs.A - (int64_t)value - carry) < 0;
+		regs.A -= value;
+		regs.A -= carry;
+		regs.Zf = regs.A == 0;
+		regs.Nf = 1;
+	}
+
+	inline void AND(uint8_t value)
+	{
+		regs.A &= value;
+		regs.Zf = regs.A == 0;
+		regs.Nf = 0;
+		regs.Hf = 1;
+		regs.Cf = 0;
+	}
+
+	inline void XOR(uint8_t value)
+	{
+		regs.A ^= value;
+		regs.Zf = regs.A == 0;
+		regs.Nf = regs.Hf = regs.Cf = 0;
+	}
+
+	inline void OR(uint8_t value)
+	{
+		regs.A |= value;
+		regs.Zf = regs.A == 0;
+		regs.Nf = regs.Hf = regs.Cf = 0;
+	}
+
+	inline void CP(uint8_t value)
+	{
+		regs.Zf = regs.A == value;
+		regs.Hf = halfcarry_sub(regs.A, value);
+		regs.Nf = 1;
+		regs.Cf = regs.A < value;
+	}
+
 public:
 	void OnIOWrite(uint8_t port, uint8_t value)
 	{

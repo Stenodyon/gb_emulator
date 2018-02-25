@@ -1345,17 +1345,211 @@ void CPU::step()
 		cycleWait(4);
 		break;
 	}
+	case 0x90: // SUB B
+	{
+#ifdef _DEBUG
+		std::cout << "SUB B" << std::endl;
+#endif
+		SUB(regs.B);
+		cycleWait(4);
+		break;
+	}
 	case 0x91: // SUB C
 	{
 #ifdef _DEBUG
 		std::cout << "SUB C" << std::endl;
 #endif
-		regs.Hf = halfcarry_sub(regs.A, regs.C);
-		regs.Cf = ((int64_t)regs.A - regs.C) < 0;
-		regs.A -= regs.C;
-		regs.Zf = regs.A == 0;
-		regs.Nf = 1;
+		SUB(regs.C);
 		cycleWait(4);
+		break;
+	}
+	case 0x92: // SUB D
+	{
+#ifdef _DEBUG
+		std::cout << "SUB D" << std::endl;
+#endif
+		SUB(regs.D);
+		cycleWait(4);
+		break;
+	}
+	case 0x93: // SUB E
+	{
+#ifdef _DEBUG
+		std::cout << "SUB E" << std::endl;
+#endif
+		SUB(regs.E);
+		cycleWait(4);
+		break;
+	}
+	case 0x94: // SUB H
+	{
+#ifdef _DEBUG
+		std::cout << "SUB H" << std::endl;
+#endif
+		SUB(regs.H);
+		cycleWait(4);
+		break;
+	}
+	case 0x95: // SUB L
+	{
+#ifdef _DEBUG
+		std::cout << "SUB L" << std::endl;
+#endif
+		SUB(regs.L);
+		cycleWait(4);
+		break;
+	}
+	case 0x96: // SUB (HL)
+	{
+#ifdef _DEBUG
+		std::cout << "SUB (HL)" << std::endl;
+#endif
+		SUB(ram[regs.HL]);
+		cycleWait(8);
+		break;
+	}
+	case 0x97: // SUB A
+	{
+#ifdef _DEBUG
+		std::cout << "SUB A" << std::endl;
+#endif
+		SUB(regs.A);
+		cycleWait(4);
+		break;
+	}
+	case 0x98: // SBC B
+	{
+#ifdef _DEBUG
+		std::cout << "SBC B" << std::endl;
+#endif
+		SBC(regs.B);
+		cycleWait(4);
+		break;
+	}
+	case 0x99: // SBC C
+	{
+#ifdef _DEBUG
+		std::cout << "SBC C" << std::endl;
+#endif
+		SBC(regs.C);
+		cycleWait(4);
+		break;
+	}
+	case 0x9A: // SBC D
+	{
+#ifdef _DEBUG
+		std::cout << "SBC D" << std::endl;
+#endif
+		SBC(regs.D);
+		cycleWait(4);
+		break;
+	}
+	case 0x9B: // SBC E
+	{
+#ifdef _DEBUG
+		std::cout << "SBC E" << std::endl;
+#endif
+		SBC(regs.E);
+		cycleWait(4);
+		break;
+	}
+	case 0x9C: // SBC H
+	{
+#ifdef _DEBUG
+		std::cout << "SBC H" << std::endl;
+#endif
+		SBC(regs.H);
+		cycleWait(4);
+		break;
+	}
+	case 0x9D: // SBC L
+	{
+#ifdef _DEBUG
+		std::cout << "SBC L" << std::endl;
+#endif
+		SBC(regs.L);
+		cycleWait(4);
+		break;
+	}
+	case 0x9E: // SBC (HL)
+	{
+#ifdef _DEBUG
+		std::cout << "SBC (HL)" << std::endl;
+#endif
+		SBC(ram[regs.HL]);
+		cycleWait(8);
+		break;
+	}
+	case 0x9F: // SBC A
+	{
+#ifdef _DEBUG
+		std::cout << "SBC A" << std::endl;
+#endif
+		SBC(regs.A);
+		cycleWait(4);
+		break;
+	}
+	case 0xA0: // AND B
+	{
+#ifdef _DEBUG
+		std::cout << "AND B" << std::endl;
+#endif
+		AND(regs.B);
+		cycleWait(4);
+		break;
+	}
+	case 0xA1: // AND C
+	{
+#ifdef _DEBUG
+		std::cout << "AND C" << std::endl;
+#endif
+		AND(regs.C);
+		cycleWait(4);
+		break;
+	}
+	case 0xA2: // AND D
+	{
+#ifdef _DEBUG
+		std::cout << "AND D" << std::endl;
+#endif
+		AND(regs.D);
+		cycleWait(4);
+		break;
+	}
+	case 0xA3: // AND E
+	{
+#ifdef _DEBUG
+		std::cout << "AND E" << std::endl;
+#endif
+		AND(regs.E);
+		cycleWait(4);
+		break;
+	}
+	case 0xA4: // AND H
+	{
+#ifdef _DEBUG
+		std::cout << "AND H" << std::endl;
+#endif
+		AND(regs.H);
+		cycleWait(4);
+		break;
+	}
+	case 0xA5: // AND L
+	{
+#ifdef _DEBUG
+		std::cout << "AND L" << std::endl;
+#endif
+		AND(regs.L);
+		cycleWait(4);
+		break;
+	}
+	case 0xA6: // AND (HL)
+	{
+#ifdef _DEBUG
+		std::cout << "AND (HL)" << std::endl;
+#endif
+		AND(ram[regs.HL]);
+		cycleWait(8);
 		break;
 	}
 	case 0xA7: // AND A
@@ -1363,11 +1557,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "AND A" << std::endl;
 #endif
-		regs.A &= regs.A;
-		regs.Zf = regs.A == 0;
-		regs.Nf = 0;
-		regs.Hf = 1;
-		regs.Cf = 0;
+		AND(regs.A);
 		cycleWait(4);
 		break;
 	}
@@ -1376,9 +1566,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "XOR B" << std::endl;
 #endif
-		regs.A ^= regs.B;
-		regs.Zf = regs.A == 0;
-		regs.Nf = regs.Hf = regs.Cf = 0;
+		XOR(regs.B);
 		cycleWait(4);
 		break;
 	}
@@ -1387,9 +1575,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "XOR C" << std::endl;
 #endif
-		regs.A ^= regs.C;
-		regs.Zf = regs.A == 0;
-		regs.Nf = regs.Hf = regs.Cf = 0;
+		XOR(regs.C);
 		cycleWait(4);
 		break;
 	}
@@ -1398,9 +1584,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "XOR D" << std::endl;
 #endif
-		regs.A ^= regs.D;
-		regs.Zf = regs.A == 0;
-		regs.Nf = regs.Hf = regs.Cf = 0;
+		XOR(regs.D);
 		cycleWait(4);
 		break;
 	}
@@ -1409,9 +1593,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "XOR E" << std::endl;
 #endif
-		regs.A ^= regs.E;
-		regs.Zf = regs.A == 0;
-		regs.Nf = regs.Hf = regs.Cf = 0;
+		XOR(regs.E);
 		cycleWait(4);
 		break;
 	}
@@ -1420,9 +1602,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "XOR H" << std::endl;
 #endif
-		regs.A ^= regs.H;
-		regs.Zf = regs.A == 0;
-		regs.Nf = regs.Hf = regs.Cf = 0;
+		XOR(regs.H);
 		cycleWait(4);
 		break;
 	}
@@ -1431,9 +1611,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "XOR L" << std::endl;
 #endif
-		regs.A ^= regs.L;
-		regs.Zf = regs.A == 0;
-		regs.Nf = regs.Hf = regs.Cf = 0;
+		XOR(regs.L);
 		cycleWait(4);
 		break;
 	}
@@ -1442,9 +1620,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "XOR (HL)" << std::endl;
 #endif
-		regs.A ^= (uint8_t)ram[regs.HL];
-		regs.Zf = regs.A == 0;
-		regs.Nf = regs.Hf = regs.Cf = 0;
+		XOR(ram[regs.HL]);
 		cycleWait(8);
 		break;
 	}
@@ -1453,8 +1629,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "XOR A" << std::endl;
 #endif
-		regs.A ^= regs.A;
-		regs.Zf = regs.Nf = regs.Hf = regs.Cf = 0;
+		XOR(regs.A);
 		cycleWait(4);
 		break;
 	}
@@ -1463,9 +1638,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "OR B" << std::endl;
 #endif
-		regs.A |= regs.B;
-		regs.Zf = regs.A == 0;
-		regs.Nf = regs.Hf = regs.Cf = 0;
+		OR(regs.B);
 		cycleWait(4);
 		break;
 	}
@@ -1474,9 +1647,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "OR C" << std::endl;
 #endif
-		regs.A |= regs.C;
-		regs.Zf = regs.A == 0;
-		regs.Nf = regs.Hf = regs.Cf = 0;
+		OR(regs.C);
 		cycleWait(4);
 		break;
 	}
@@ -1485,9 +1656,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "OR D" << std::endl;
 #endif
-		regs.A |= regs.D;
-		regs.Zf = regs.A == 0;
-		regs.Nf = regs.Hf = regs.Cf = 0;
+		OR(regs.D);
 		cycleWait(4);
 		break;
 	}
@@ -1496,9 +1665,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "OR E" << std::endl;
 #endif
-		regs.A |= regs.E;
-		regs.Zf = regs.A == 0;
-		regs.Nf = regs.Hf = regs.Cf = 0;
+		OR(regs.E);
 		cycleWait(4);
 		break;
 	}
@@ -1507,9 +1674,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "OR H" << std::endl;
 #endif
-		regs.A |= regs.H;
-		regs.Zf = regs.A == 0;
-		regs.Nf = regs.Hf = regs.Cf = 0;
+		OR(regs.H);
 		cycleWait(4);
 		break;
 	}
@@ -1518,9 +1683,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "OR L" << std::endl;
 #endif
-		regs.A |= regs.L;
-		regs.Zf = regs.A == 0;
-		regs.Nf = regs.Hf = regs.Cf = 0;
+		OR(regs.L);
 		cycleWait(4);
 		break;
 	}
@@ -1529,9 +1692,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "OR (HL)" << std::endl;
 #endif
-		regs.A |= (uint8_t)ram[regs.HL];
-		regs.Zf = regs.A == 0;
-		regs.Nf = regs.Hf = regs.Cf = 0;
+		OR(ram[regs.HL]);
 		cycleWait(8);
 		break;
 	}
@@ -1540,9 +1701,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "OR A" << std::endl;
 #endif
-		regs.A |= regs.A;
-		regs.Zf = regs.A == 0;
-		regs.Nf = regs.Hf = regs.Cf = 0;
+		OR(regs.A);
 		cycleWait(4);
 		break;
 	}
@@ -1551,10 +1710,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "CP B" << std::endl;
 #endif
-		regs.Zf = regs.A == regs.B;
-		regs.Nf = 1;
-		regs.Hf = halfcarry_sub(regs.A, regs.B);
-		regs.Cf = regs.A < regs.B;
+		CP(regs.B);
 		cycleWait(4);
 		break;
 	}
@@ -1563,10 +1719,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "CP C" << std::endl;
 #endif
-		regs.Zf = regs.A == regs.C;
-		regs.Nf = 1;
-		regs.Hf = halfcarry_sub(regs.A, regs.C);
-		regs.Cf = regs.A < regs.C;
+		CP(regs.C);
 		cycleWait(4);
 		break;
 	}
@@ -1575,10 +1728,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "CP D" << std::endl;
 #endif
-		regs.Zf = regs.A == regs.D;
-		regs.Nf = 1;
-		regs.Hf = halfcarry_sub(regs.A, regs.D);
-		regs.Cf = regs.A < regs.D;
+		CP(regs.D);
 		cycleWait(4);
 		break;
 	}
@@ -1587,10 +1737,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "CP E" << std::endl;
 #endif
-		regs.Zf = regs.A == regs.E;
-		regs.Nf = 1;
-		regs.Hf = halfcarry_sub(regs.A, regs.E);
-		regs.Cf = regs.A < regs.E;
+		CP(regs.E);
 		cycleWait(4);
 		break;
 	}
@@ -1599,10 +1746,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "CP H" << std::endl;
 #endif
-		regs.Zf = regs.A == regs.H;
-		regs.Nf = 1;
-		regs.Hf = halfcarry_sub(regs.A, regs.H);
-		regs.Cf = regs.A < regs.H;
+		CP(regs.H);
 		cycleWait(4);
 		break;
 	}
@@ -1611,10 +1755,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "CP L" << std::endl;
 #endif
-		regs.Zf = regs.A == regs.L;
-		regs.Nf = 1;
-		regs.Hf = halfcarry_sub(regs.A, regs.L);
-		regs.Cf = regs.A < regs.L;
+		CP(regs.L);
 		cycleWait(4);
 		break;
 	}
@@ -1623,11 +1764,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "CP (HL)" << std::endl;
 #endif
-		uint8_t value = ram[regs.HL];
-		regs.Zf = regs.A == value;
-		regs.Nf = 1;
-		regs.Hf = halfcarry_sub(regs.A, value);
-		regs.Cf = regs.A < value;
+		CP(ram[regs.HL]);
 		cycleWait(8);
 		break;
 	}
@@ -1636,10 +1773,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "CP A" << std::endl;
 #endif
-		regs.Zf = regs.A == regs.A;
-		regs.Nf = 1;
-		regs.Hf = halfcarry_sub(regs.A, regs.A);
-		regs.Cf = regs.A < regs.A;
+		CP(regs.A);
 		cycleWait(4);
 		break;
 	}
@@ -1932,11 +2066,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << hex<uint8_t>(value) << " SUB " << +value << std::endl;
 #endif
-		regs.Hf = halfcarry_sub(regs.A, value);
-		regs.Cf = regs.A < value;
-		regs.A -= value;
-		regs.Zf = regs.A == 0;
-		regs.Nf = 1;
+		SUB(value);
 		cycleWait(8);
 		break;
 	}
@@ -2020,13 +2150,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << hex << uint8_t > (value) << " SBC A, " << +value << std::endl;
 #endif
-		uint8_t carry = regs.Cf;
-		regs.Hf = (uint64_t)(regs.A & 0xF) < (((uint64_t)value & 0xF) + carry);
-		regs.Cf = ((int64_t)regs.A - (int64_t)value - carry) < 0;
-		regs.A -= value;
-		regs.A -= carry;
-		regs.Zf = regs.A == 0;
-		regs.Nf = 1;
+		SBC(value);
 		cycleWait(8);
 		break;
 	}
@@ -2086,11 +2210,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << hex<uint8_t>(value) << " AND " << hex<uint8_t>(value) << std::endl;
 #endif
-		regs.A &= value;
-		regs.Zf = regs.A == 0;
-		regs.Nf = 0;
-		regs.Hf = 1;
-		regs.Cf = 0;
+		AND(value);
 		cycleWait(8);
 		break;
 	}
@@ -2142,9 +2262,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << hex<uint8_t>(value) << " XOR " << hex<uint8_t>(value) << std::endl;
 #endif
-		regs.A ^= value;
-		regs.Zf = regs.A == 0;
-		regs.Nf = regs.Hf = regs.Cf = 0;
+		XOR(value);
 		cycleWait(8);
 		break;
 	}
@@ -2213,9 +2331,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << hex<uint8_t>(value) << " OR " << hex<uint8_t>(value) << std::endl;
 #endif
-		regs.A |= value;
-		regs.Zf = regs.A == 0;
-		regs.Nf = regs.Hf = regs.Cf = 0;
+		OR(value);
 		cycleWait(8);
 		break;
 	}
@@ -2277,10 +2393,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << hex<uint8_t>(value) << " CP " << +value << std::endl;
 #endif
-		regs.Zf = regs.A == value;
-		regs.Hf = halfcarry_sub(regs.A, value);
-		regs.Nf = 1;
-		regs.Cf = regs.A < value;
+		CP(value);
 		cycleWait(8);
 		break;
 	}
