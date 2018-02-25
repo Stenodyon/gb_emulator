@@ -171,6 +171,34 @@ public:
 	void prefixCB();
 	void run();
 
+	void RLC(uint8_t & value)
+	{
+		regs.Cf = (value & 0x80) > 0;
+		value <<= 1;
+		value |= regs.Cf;
+		regs.Zf = value == 0;
+		regs.Nf = regs.Hf = 0;
+	}
+
+	void RRC(uint8_t & value)
+	{
+		regs.Cf = value & 0x01;
+		value >>= 1;
+		value |= regs.Cf ? 0x80 : 0x00;
+		regs.Zf = value == 0;
+		regs.Nf = regs.Hf = 0;
+	}
+
+	void RL(uint8_t & value)
+	{
+		uint8_t temp = regs.Cf;
+		regs.Cf = (value & 0x80) > 0;
+		value <<= 1;
+		value |= temp;
+		regs.Zf = value == 0;
+		regs.Nf = regs.Hf = 0;
+	}
+
 	void RR(uint8_t & value)
 	{
 		bool carry = regs.Cf;
@@ -182,11 +210,64 @@ public:
 		regs.Nf = regs.Hf = 0;
 	}
 
+	void SLA(uint8_t & value)
+	{
+		regs.Cf = (value & 0x80) > 0;
+		value <<= 1;
+		regs.Zf = value == 0;
+		regs.Nf = regs.Hf = 0;
+	}
+
+	void SRA(uint8_t & value)
+	{
+		regs.Cf = value & 0x01;
+		uint8_t bit7 = value & 0x80;
+		value >>= 1;
+		value |= bit7;
+		regs.Zf = value == 0;
+		regs.Nf = regs.Hf = 0;
+	}
+
+	void SWAP(uint8_t & value)
+	{
+		uint8_t bottom = ((value & 0x0F) << 4);
+		value >>= 4;
+		value |= bottom;
+		regs.Zf = value == 0;
+		regs.Nf = regs.Hf = regs.Cf = 0;
+	}
+
+	void SRL(uint8_t & value)
+	{
+		regs.Cf = value & 0x01;
+		value >>= 1;
+		regs.Zf = value == 0;
+		regs.Nf = regs.Hf = 0;
+	}
+
+	void BIT(uint8_t bit, uint8_t value)
+	{
+		regs.Zf = !(value & (0x1 << bit));
+		regs.Nf = 0;
+		regs.Hf = 1;
+	}
+
+	void RES(uint8_t bit, uint8_t & value)
+	{
+		value &= ~(0x1 << bit);
+	}
+
+	void SET(uint8_t bit, uint8_t & value)
+	{
+		value |= ~(0x1 << bit);
+	}
+
 	inline void ADD(uint8_t value)
 	{
-		regs.Hf = halfcarry8(regs.A, value);
+		regs.Hf = (regs.A & 0x0F) + (value & 0x0F) > 0x0F;
 		regs.Cf = ((uint64_t)regs.A + value) > 0xFF;
 		regs.A += value;
+		regs.Zf = regs.A == 0;
 		regs.Nf = 0;
 	}
 
@@ -432,7 +513,9 @@ public:
 		}
 		case 0x42: // Display - Scroll Y
 		{
+#ifdef _DEBUG
 			std::cout << "Wrote " << hex<uint8_t>(value) << " to display scroll y" << std::endl;
+#endif
 			display.scrollY = value;
 			break;
 		}
@@ -496,7 +579,7 @@ public:
 
 	uint8_t OnIORead(uint8_t port)
 	{
-		if(port != 0x01 && port != 0x02)
+		if(port != 0x01 && port != 0x02 && port != 0x44)
 			std::cout << "Reading from IO port " << hex<uint8_t>(port) << std::endl;
 		switch (port)
 		{
@@ -533,11 +616,7 @@ public:
 		case 0x4B: // Display - Window X
 			return display.winPosX;
 		case 0x44: // LCD - LY
-		{
-			uint8_t ly = display.LY();
-			std::cout << "Read LY: " << hex<uint8_t>(ly) << std::endl;
-			return ly;
-		}
+			return display.LY();
 		case 0xFF: // Interrupt master flag
 			return (uint8_t)interruptsEnabled;
 		default:

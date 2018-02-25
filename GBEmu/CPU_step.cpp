@@ -68,7 +68,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "DEC B" << std::endl;
 #endif
-		regs.Hf = halfcarry8(regs.B, 0xFF);
+		regs.Hf = halfcarry_sub(regs.B, 0x01);
 		regs.B--;
 		regs.Zf = regs.B == 0;
 		regs.Nf = 1;
@@ -83,6 +83,16 @@ void CPU::step()
 #endif
 		regs.B = value;
 		cycleWait(8);
+		break;
+	}
+	case 0x07: // RLCA
+	{
+#ifdef _DEBUG
+		std::cout << "RLCA" << std::endl;
+#endif
+		RLC(regs.A);
+		regs.Zf = 0;
+		cycleWait(4);
 		break;
 	}
 	case 0x08: // LD (a16), SP
@@ -124,7 +134,7 @@ void CPU::step()
 		regs.Hf = halfcarry8(regs.C, 0x1);
 		regs.C++;
 		regs.Zf = regs.C == 0x00;
-		regs.Nf = 1;
+		regs.Nf = 0;
 		cycleWait(3);
 		break;
 	}
@@ -133,7 +143,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "DEC C" << std::endl;
 #endif
-		regs.Hf = halfcarry8(regs.C, 0xFF);
+		regs.Hf = halfcarry_sub(regs.C, 0x01);
 		regs.C--;
 		regs.Zf = regs.C == 0;
 		regs.Nf = 1;
@@ -148,6 +158,18 @@ void CPU::step()
 #endif
 		regs.C = value;
 		cycleWait(8);
+		break;
+	}
+	case 0x0F: // RRCA
+	{
+#ifdef _DEBUG
+		std::cout << "RRCA" << std::endl;
+#endif
+		regs.Cf = regs.A & 0x01;
+		regs.A >>= 1;
+		regs.A |= regs.Cf ? 0x80 : 0x00;
+		regs.Zf = regs.Nf = regs.Hf = 0;
+		cycleWait(4);
 		break;
 	}
 	case 0x11: // LD DE, d16
@@ -195,7 +217,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "DEC D" << std::endl;
 #endif
-		regs.Hf = halfcarry8(regs.D, 0xFF);
+		regs.Hf = halfcarry_sub(regs.D, 0x01);
 		regs.D--;
 		regs.Zf = regs.D == 0;
 		regs.Nf = 1;
@@ -210,6 +232,19 @@ void CPU::step()
 #endif
 		regs.D = value;
 		cycleWait(8);
+		break;
+	}
+	case 0x17: // RLA
+	{
+#ifdef _DEBUG
+		std::cout << "RLA" << std::endl;
+#endif
+		uint8_t temp = regs.Cf;
+		regs.Cf = (regs.A & 0x80) > 0;
+		regs.A <<= 1;
+		regs.A |= temp;
+		regs.Zf = regs.Nf = regs.Hf = 0;
+		cycleWait(4);
 		break;
 	}
 	case 0x18: // JR r8
@@ -261,7 +296,7 @@ void CPU::step()
 		regs.Hf = halfcarry8(regs.E, 0x1);
 		regs.E++;
 		regs.Zf = regs.E == 0x00;
-		regs.Nf = 1;
+		regs.Nf = 0;
 		cycleWait(3);
 		break;
 	}
@@ -270,7 +305,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "DEC E" << std::endl;
 #endif
-		regs.Hf = halfcarry8(regs.E, 0xFF);
+		regs.Hf = halfcarry_sub(regs.E, 0x01);
 		regs.E--;
 		regs.Zf = regs.E == 0;
 		regs.Nf = 1;
@@ -361,7 +396,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "DEC H" << std::endl;
 #endif
-		regs.Hf = halfcarry8(regs.H, 0xFF);
+		regs.Hf = halfcarry_sub(regs.H, 0x01);
 		regs.H--;
 		regs.Zf = regs.H == 0;
 		regs.Nf = 1;
@@ -431,7 +466,7 @@ void CPU::step()
 		regs.Hf = halfcarry8(regs.L, 0x01);
 		regs.L++;
 		regs.Zf = regs.L == 0;
-		regs.Nf = 1;
+		regs.Nf = 0;
 		cycleWait(4);
 #ifdef _DEBUG
 		std::cout << "INC L (" << hex<uint8_t>(regs.L) << ") Z flag: " << (bool)(regs.Zf) << std::endl;
@@ -443,7 +478,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "DEC L" << std::endl;
 #endif
-		regs.Hf = halfcarry8(regs.L, 0xFF);
+		regs.Hf = halfcarry_sub(regs.L, 0x01);
 		regs.L--;
 		regs.Zf = regs.L == 0;
 		regs.Nf = 1;
@@ -517,13 +552,27 @@ void CPU::step()
 		cycleWait(8);
 		break;
 	}
+	case 0x34: // INC (HL)
+	{
+#ifdef _DEBUG
+		std::cout << "INC B" << std::endl;
+#endif
+		uint8_t value = ram[regs.HL];
+		regs.Hf = halfcarry8(value, 0x01);
+		value++;
+		regs.Zf = value == 0;
+		regs.Nf = 0;
+		ram[regs.HL] = value;
+		cycleWait(12);
+		break;
+	}
 	case 0x35: // DEC (HL)
 	{
 #ifdef _DEBUG
 		std::cout << "DEC (HL)" << std::endl;
 #endif
 		uint8_t value = ram[regs.HL];
-		regs.Hf = halfcarry8(value, 0xFF);
+		regs.Hf = halfcarry_sub(value, 0x01);
 		value--;
 		regs.Zf = value == 0;
 		regs.Nf = 1;
@@ -598,7 +647,7 @@ void CPU::step()
 		regs.Hf = halfcarry8(regs.A, 0x1);
 		regs.A++;
 		regs.Zf = regs.A == 0x00;
-		regs.Nf = 1;
+		regs.Nf = 0;
 		cycleWait(3);
 		break;
 	}
@@ -607,7 +656,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "DEC A" << std::endl;
 #endif
-		regs.Hf = halfcarry8(regs.A, 0xFF);
+		regs.Hf = halfcarry_sub(regs.A, 0x01);
 		regs.A--;
 		regs.Zf = regs.A == 0;
 		regs.Nf = 1;
