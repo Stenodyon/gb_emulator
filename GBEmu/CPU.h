@@ -35,6 +35,7 @@ public:
 	uint64_t cycleCount = 0;
 
 	bool running = true;
+	Joypad joypad;
 
 private:
 	Regs regs;
@@ -43,7 +44,6 @@ private:
 	Serial serial;
 	Timer timer;
 	Sound sound;
-	Joypad joypad;
 	bool interruptsEnabled = true;
 	bool halted = false;
 	bool double_speed = false;
@@ -139,8 +139,7 @@ public:
 	void cycleWait(uint64_t cycleCount)
 	{
 		timer.OnMachineCycle(cycleCount / 4);
-		uint64_t microseconds = (uint64_t)(cycleCount * 0.23866);
-		//std::this_thread::sleep_for(std::chrono::microseconds(microseconds));
+		display.OnMachineCycle(cycleCount / 4);
 		this->cycleCount += cycleCount;
 	}
 
@@ -353,9 +352,16 @@ public:
 		regs.Cf = regs.A < value;
 	}
 
+	void DMATranfer(uint8_t source);
+
 public:
 	void OnIOWrite(uint8_t port, uint8_t value)
 	{
+		if ((port & 0xF0) == 0x30) // Sound - Wave pattern RAM
+		{
+			sound.wave_pattern[port & 0x0F] = value;
+			return;
+		}
 		switch (port)
 		{
 		case 0x00: // Joypad
@@ -448,6 +454,12 @@ public:
 			sound.c2_envelope = value;
 			break;
 		}
+		case 0x18: // Sound - Channel 2 Frequency Low
+		{
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 2 frequency low register" << std::endl;
+			sound.c2_frequency.lower = value;
+			break;
+		}
 		case 0x19: // Sound - Channel 2 Frequency High
 		{
 			std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 2 frequency high register" << std::endl;
@@ -470,6 +482,12 @@ public:
 		{
 			std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 3 output level register" << std::endl;
 			sound.c3_output_level = value;
+			break;
+		}
+		case 0x1D: // Sound - Channel 3 Frequency Low
+		{
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 3 frequency low register" << std::endl;
+			sound.c3_frequency.lower = value;
 			break;
 		}
 		case 0x1E: // Sound - Channel 3 Frequency High
@@ -552,6 +570,12 @@ public:
 			display.lyc = value;
 			break;
 		}
+		case 0x46: // DMA Tranfer
+		{
+			std::cout << "Initiated a DMA transfer from " << hex<uint16_t>(value << 8) << std::endl;
+			DMATranfer(value);
+			break;
+		}
 		case 0x47: // Display - Background palette
 		{
 			std::cout << "Wrote " << hex<uint8_t>(value) << " to display bg palette" << std::endl;
@@ -588,6 +612,10 @@ public:
 			speed_switch = value;
 			break;
 		}
+		case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E: case 0x7F:
+		{
+			break;
+		}
 		case 0xFF: // Interrupt Enable
 		{
 			std::cout << "Wrote " << hex<uint8_t>(value) << " to interrupt enable" << std::endl;
@@ -606,12 +634,16 @@ public:
 
 	uint8_t OnIORead(uint8_t port)
 	{
-		if(port != 0x01 && port != 0x02 && port != 0x44)
+		if(port != 0x00 && port != 0x01 && port != 0x02 && port != 0x44)
 			std::cout << "Reading from IO port " << hex<uint8_t>(port) << std::endl;
 		switch (port)
 		{
 		case 0x00: // Keypad
-			return joypad.joypad;
+		{
+			uint8_t value = joypad.joypad;
+			std::cout << "--------------- INPUT " << hex<uint8_t>(value) << std::endl;
+			return value;
+		}
 		case 0x01: // Serial data
 			return serial.data;
 		case 0x02: // Serial transfer control
@@ -626,8 +658,14 @@ public:
 			return timer.control;
 		case 0x0F: // Interrupt flag
 			return int_flag;
+		case 0x18: // Sound - Channel 2 Frequency Low
+			return sound.c2_frequency.lower;
+		case 0x25: // Sound - Sound output select
+			return sound.sound_output;
 		case 0x40: // Display - LCD Control
 			return display.control;
+		case 0x41: // Display - LCD Status
+			return display.status;
 		case 0x42: // Display - Scroll Y
 			return display.scrollY;
 		case 0x43: // Display - Scroll X
@@ -666,11 +704,15 @@ public:
 		case 0x40: // V-Blank interrupt
 			int_flag.vblank = 1;
 			break;
+		case 0x48: // LCD STAT interrupt
+			int_flag.lcd_stat = 1;
+			break;
 		case 0x50: // Timer interrupt
 			int_flag.timer = 1;
 			break;
 		default:
 		{
+			std::cerr << "ERR: INVALID INTERRUPT " << hex<uint8_t>(value) << std::endl;
 			std::ostringstream sstream;
 			sstream << "Invalid interrupt value: " << hex<uint8_t>(value);
 			throw std::runtime_error(sstream.str());
@@ -709,6 +751,16 @@ private:
 			{
 				int_flag.vblank = false;
 				executeInterrupt(0x40);
+			}
+			if (halted)
+				halted = false;
+		}
+		else if (int_enable.lcd_stat && int_flag.lcd_stat)
+		{
+			if (interruptsEnabled)
+			{
+				int_flag.lcd_stat = false;
+				executeInterrupt(0x48);
 			}
 			if (halted)
 				halted = false;

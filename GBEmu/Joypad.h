@@ -4,6 +4,9 @@ class Joypad
 private:
 	struct _joypad_register
 	{
+		bool button_a, button_b, button_select, button_start;
+		bool right, left, up, down;
+
 		union {
 			uint8_t value;
 #pragma pack(push, 1)
@@ -20,11 +23,15 @@ private:
 
 		_joypad_register& operator=(uint8_t value)
 		{
-			this->value = value & 0xF0; return *this;
+			this->value = (value & 0xF0) | (this->value & 0x0F); return *this;
 		}
-		operator uint8_t() const
+		operator uint8_t()
 		{
-			return this->value | 0x0F; // 0 means button is pressed
+			right_A = ~((select_directions && right) | (select_buttons && button_a));
+			left_B = ~((select_directions && left) | (select_buttons && button_b));
+			up_select = ~((select_directions && up) | (select_buttons && button_select));
+			down_start = ~((select_directions && down) | (select_buttons && button_start));
+			return this->value; // 0 means button is pressed
 		}
 	};
 public:

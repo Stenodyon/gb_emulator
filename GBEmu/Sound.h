@@ -222,6 +222,7 @@ public:
 	uint8_t c3_on, c3_sound_length, c3_output_level, c4_sound_length;
 	_poly_counter c4_poly_counter;
 	_frequency_hi c4_counter;
+	uint8_t wave_pattern[16];
 
 	_channel_control channel_control;
 	_sound_output sound_output;

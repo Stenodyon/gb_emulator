@@ -4,8 +4,6 @@
 
 void CPU::step()
 {
-	//TODO: Maybe change the large switch to a jump table
-	//TODO: Move this to .cpp file
 	/*
 	static uint64_t counter = 0;
 	if (counter >= 1000)
