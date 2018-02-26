@@ -15,6 +15,48 @@ void Display::OnMachineCycle(uint64_t cycles)
 	elapsedTime += cycles * 4 * 0.238418579;
 }
 
+uint8_t Display::getBGColor(uint8_t x, uint8_t y)
+{
+	const uint8_t tileX = x / 8;
+	const uint8_t tileY = y / 8;
+	const uint16_t tileIndex = tileX + 32 * tileY;
+	const uint16_t tileData = bg_tilemap_select ? 0x9C000 : 0x9800;
+	const uint8_t tileCode = *(ram.memory + tileData + tileIndex);
+	tile * tile = getTile(tileCode);
+	const uint8_t pixelX = x & 0x07;
+	const uint8_t pixelY = y & 0x07;
+	const uint8_t pixelIndex = pixelX + 8 * pixelY;
+	const uint8_t colorCode = (*tile)[pixelIndex];
+	const uint8_t color = bg_palette[colorCode];
+	return color;
+}
+
+uint8_t Display::getWindowColor(uint8_t x, uint8_t y)
+{
+	const uint8_t tileX = x / 8;
+	const uint8_t tileY = y / 8;
+	const uint16_t tileIndex = tileX + 32 * tileY;
+	const uint16_t tileData = win_tilemap_select ? 0x9C00 : 0x09800;
+	const uint8_t tileCode = *(ram.memory + tileData + tileIndex);
+	tile * tile = getTile(tileCode);
+	const uint8_t pixelX = x & 0x07;
+	const uint8_t pixelY = y & 0x07;
+	const uint8_t pixelIndex = pixelX + 8 * pixelY;
+	const uint8_t colorCode = (*tile)[pixelIndex];
+	const uint8_t color = bg_palette[colorCode];
+	return color;
+}
+
+uint8_t Display::getBGColorUnderPixel(uint8_t x, uint8_t y)
+{
+	return getBGColor(x + scrollX, y + scrollY);
+}
+
+uint8_t Display::getWinColorUnderPixel(uint8_t x, uint8_t y)
+{
+	return getWindowColor(x - (winPosX - 7), y - winPosY);
+}
+
 void Display::drawTileAt(tile * tile, int16_t x, int16_t y, palette * palette, bool transparency)
 {
 	for (uint8_t _y = 0; _y < 8; _y++)
@@ -101,6 +143,23 @@ void Display::drawWindow()
 	}
 }
 
+void Display::drawLine(uint8_t line)
+{
+	for (uint8_t x = 0; x < 160; x++)
+	{
+		if (win_display_enable && line >= winPosY && (x >= (winPosX - 7)))
+		{
+			uint8_t color = getWinColorUnderPixel(x, line);
+			drawPixel(x, line, color);
+		}
+		else if (bg_display)
+		{
+			uint8_t color = getBGColorUnderPixel(x, line);
+			drawPixel(x, line, color);
+		}
+	}
+}
+
 void Display::setWindowTitle()
 {
 	if (last_control != control)
@@ -119,7 +178,7 @@ void Display::setWindowTitle()
 
 void Display::update()
 {
-	setWindowTitle();
+	//setWindowTitle();
 	status.ly_coincidence = LY() == lyc;
 	if (status.coincidence_int && status.ly_coincidence)
 		ram.cpu->interrupt(0x48);
@@ -134,6 +193,10 @@ void Display::update()
 		else if (line_progress > HBLANK_us && last_line_progress < HBLANK_us) // Just reached HBLANK
 		{
 			status.stat_mode = 0;
+
+			if (lcd_display_enable)
+				drawLine(LY());
+
 			if (status.hblank_int)
 				ram.cpu->interrupt(0x48);
 		}
@@ -151,6 +214,11 @@ void Display::update()
 		if (status.vblank_int)
 			ram.cpu->interrupt(0x48);
 
+		if (lcd_display_enable && obj_dispay_enable)
+			drawSprites();
+		SDL_RenderPresent(renderer);
+
+		/*
 		if (lcd_display_enable)
 		{
 			auto now = std::chrono::system_clock::now();
@@ -166,6 +234,7 @@ void Display::update()
 					drawWindow();
 				if (obj_dispay_enable)
 					drawSprites();
+				
 				SDL_RenderPresent(renderer);
 				last_refresh = now;
 			}
@@ -176,6 +245,7 @@ void Display::update()
 			SDL_RenderClear(renderer);
 			SDL_RenderPresent(renderer);
 		}
+		//*/
 	}
 
 	double remainder = elapsedTime - REFRESH_us;

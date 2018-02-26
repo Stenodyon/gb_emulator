@@ -42,7 +42,6 @@ struct sprite
 #pragma pack(pop)
 	};
 };
-
 static_assert(sizeof(sprite) == 4, "sprite structure is not 4 bytes");
 
 static const double OAM_us = 19.07348632;
@@ -78,7 +77,7 @@ private:
 		operator uint8_t() const { return this->value; }
 		uint8_t operator[](uint8_t shadeIndex)
 		{
-			uint8_t shift = 6 - 2 * shadeIndex;
+			uint8_t shift = 2 * shadeIndex;
 			return (value & (0x3 << shift)) >> shift;
 		}
 	};
@@ -103,9 +102,14 @@ private:
 		drawPixel(x, y);
 	}
 
+	uint8_t getBGColor(uint8_t x, uint8_t y);
+	uint8_t getWindowColor(uint8_t x, uint8_t y);
+	uint8_t getBGColorUnderPixel(uint8_t x, uint8_t y);
+	uint8_t getWinColorUnderPixel(uint8_t x, uint8_t y);
+
 	tile * getTile(uint8_t index)
 	{
-		if(bg_win_tile_data_select)
+		if (bg_win_tile_data_select)
 			return (tile*)(ram.memory + 0x8000) + index;
 		else
 			return (tile*)(ram.memory + 0x9000) + (int8_t)index;
@@ -122,6 +126,8 @@ private:
 	void drawBGTileAt(tile * tile, int16_t x, int16_t y);
 	void drawBG();
 	void drawWindow();
+
+	void drawLine(uint8_t line);
 
 	void setWindowTitle();
 

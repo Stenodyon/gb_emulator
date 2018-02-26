@@ -641,7 +641,7 @@ public:
 		case 0x00: // Keypad
 		{
 			uint8_t value = joypad.joypad;
-			std::cout << "--------------- INPUT " << hex<uint8_t>(value) << std::endl;
+			//std::cout << "--------------- INPUT " << hex<uint8_t>(value) << std::endl;
 			return value;
 		}
 		case 0x01: // Serial data

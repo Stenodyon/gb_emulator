@@ -88,6 +88,7 @@ private:
 			if (address >= 0x8000 && address <= 0x9FFF
 				|| address >= 0xA000 && address <= 0xBFFF && ram.ramEnabled
 				|| address >= 0xC000 && address <= 0xDFFF
+				|| address >= 0xFE00 && address <= 0xFE9F
 				|| address >= 0xFF80 && address <= 0xFFFE)
 			{
 				uint8_t * block = getMemoryBlock();
