@@ -12,7 +12,7 @@ struct tile
 
 	uint8_t operator[](uint8_t pixelIndex)
 	{
-		uint8_t index = pixelIndex >> 3;
+		uint8_t index = (pixelIndex >> 3) * 2;
 		uint8_t bitIndex = 0x7 - (pixelIndex & 0x7);
 		uint8_t mask = 0x01 << bitIndex;
 		bool lower = data[index] & mask;
@@ -43,13 +43,13 @@ private:
 		SDL_SetRenderDrawColor(renderer, _color, _color, _color, 255);
 	}
 
-	void drawPixel(uint8_t x, uint8_t y)
+	void drawPixel(int32_t x, int32_t y)
 	{
 		SDL_Rect pixel{x * 4, y * 4, 4, 4};
 		SDL_RenderFillRect(renderer, &pixel);
 	}
 
-	void drawPixel(uint8_t x, uint8_t y, uint8_t color)
+	void drawPixel(int32_t x, int32_t y, uint8_t color)
 	{
 		setColor(color);
 		drawPixel(x, y);
@@ -68,38 +68,8 @@ private:
 		return bg_palette[color];
 	}
 
-	void drawBGTileAt(tile * tile, uint8_t x, uint8_t y)
-	{
-		for (uint8_t _y = 0; _y < 8; _y++)
-		{
-			for (uint8_t _x = 0; _x < 8; _x++)
-			{
-				uint8_t index = _x + 8 * _y;
-				uint8_t colorIndex = (*tile)[index];
-				uint8_t color = getBackgroundColor(colorIndex);
-				drawPixel(x + _x, y + _y, color);
-			}
-		}
-	}
-
-	void drawBG()
-	{
-		const uint16_t tileData = bg_tilemap_select ? 0x9C000 : 0x9800;
-		for (uint8_t _y = 0; _y < 21; _y++)
-		{
-			uint8_t yIndex = ((uint64_t)_y + scrollY / 8) % 32;
-			for (uint8_t _x = 0; _x < 19; _x++)
-			{
-				uint8_t xIndex = ((uint64_t)_x + scrollX / 8) % 32;
-				uint8_t index = xIndex + 32 * yIndex;
-				uint8_t tileIndex = *(ram.memory + tileData + index);
-				//uint8_t tileIndex = _x + 32 * _y;
-				tile * tile = getTile(tileIndex);
-				drawBGTileAt(tile, -(scrollX % 8) + _x * 8, -(scrollY % 8) + _y * 8);
-				//drawBGTileAt(tile, _x * 8, _y * 8);
-			}
-		}
-	}
+	void drawBGTileAt(tile * tile, int32_t x, int32_t y);
+	void drawBG();
 
 	//TODO: Implement the Window
 	

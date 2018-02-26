@@ -46,6 +46,7 @@ private:
 	Joypad joypad;
 	bool interruptsEnabled = true;
 	bool halted = false;
+	bool double_speed = false;
 
 	struct _int_flag
 	{
@@ -68,6 +69,24 @@ private:
 		operator uint8_t() const { return this->value; }
 	};
 	_int_flag int_enable, int_flag;
+
+	struct _speed_switch
+	{
+		union {
+			uint8_t value;
+#pragma pack(push, 1)
+			struct {
+				uint8_t prepare : 1;
+				uint8_t unused : 6;
+				uint8_t current_speed : 1;
+			};
+#pragma pack(pop)
+		};
+
+		_speed_switch& operator=(uint8_t value) { this->value = value & 0x01; return *this; }
+		operator uint8_t() const { return this->value & 0x81; }
+	};
+	_speed_switch speed_switch;
 
 public:
 	CPU(uint8_t * program_data, size_t size) : ram(program_data, size, this) , display(ram), timer(this)
@@ -119,6 +138,7 @@ public:
 
 	void cycleWait(uint64_t cycleCount)
 	{
+		timer.OnMachineCycle(cycleCount / 4);
 		uint64_t microseconds = (uint64_t)(cycleCount * 0.23866);
 		//std::this_thread::sleep_for(std::chrono::microseconds(microseconds));
 		this->cycleCount += cycleCount;
@@ -562,6 +582,12 @@ public:
 			display.winPosX = value;
 			break;
 		}
+		case 0x4D: // CGB - Speed Switch
+		{
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to CGB speed switch" << std::endl;
+			speed_switch = value;
+			break;
+		}
 		case 0xFF: // Interrupt Enable
 		{
 			std::cout << "Wrote " << hex<uint8_t>(value) << " to interrupt enable" << std::endl;
@@ -606,6 +632,8 @@ public:
 			return display.scrollY;
 		case 0x43: // Display - Scroll X
 			return display.scrollX;
+		case 0x44: // Display - LY
+			return display.LY();
 		case 0x47: // Display - Background palette
 			return display.bg_palette;
 		case 0x48: // Display - OBJ Palette 0
@@ -616,8 +644,8 @@ public:
 			return display.winPosY;
 		case 0x4B: // Display - Window X
 			return display.winPosX;
-		case 0x44: // LCD - LY
-			return display.LY();
+		case 0x4D: // CGB - Speed Switch
+			return speed_switch;
 		case 0xFF: // Interrupt master flag
 			return (uint8_t)interruptsEnabled;
 		default:
@@ -639,8 +667,6 @@ public:
 			int_flag.vblank = 1;
 			break;
 		case 0x50: // Timer interrupt
-			if (int_flag.timer == 0)
-				std::cout << "INT 0x50 flag SET" << std::endl;
 			int_flag.timer = 1;
 			break;
 		default:
@@ -679,13 +705,23 @@ private:
 			return;
 		if (int_enable.vblank && int_flag.vblank)
 		{
-			int_flag.vblank = false;
-			executeInterrupt(0x40);
+			if (interruptsEnabled)
+			{
+				int_flag.vblank = false;
+				executeInterrupt(0x40);
+			}
+			if (halted)
+				halted = false;
 		}
 		else if (int_enable.timer && int_flag.timer)
 		{
-			int_flag.timer = false;
-			executeInterrupt(0x50);
+			if (interruptsEnabled)
+			{
+				int_flag.timer = false;
+				executeInterrupt(0x50);
+			}
+			if (halted)
+				halted = false;
 		}
 	}
 

@@ -21,10 +21,6 @@ void CPU::step()
 		regs.dump();
 		getchar();
 	}
-	if (currentPointer == 0xC350)
-	{
-		std::cout << "Failing jump HERE" << std::endl;
-	}
 	uint8_t instr = nextB();
 #ifdef _DEBUG
 	std::cout << "[" << hex<uint16_t>(currentPointer) << "] " << hex<uint8_t>(instr) << " ";
@@ -192,6 +188,16 @@ void CPU::step()
 		regs.A >>= 1;
 		regs.A |= regs.Cf ? 0x80 : 0x00;
 		regs.Zf = regs.Nf = regs.Hf = 0;
+		cycleWait(4);
+		break;
+	}
+	case 0x10: // STOP
+	{
+#ifdef _DEBUG
+		std::cout << "STOP" << std::endl;
+#endif
+		if (speed_switch.prepare)
+			speed_switch.current_speed = ~speed_switch.current_speed;
 		cycleWait(4);
 		break;
 	}

@@ -9,7 +9,7 @@ static double period_table[4] = {
 	61.0351563
 };
 
-void Timer::OnMachineCycle(uint8_t cycles)
+void Timer::OnMachineCycle(uint64_t cycles)
 {
 	double elapsedTime = cycles * 4 * 0.238418579;
 	dividerElapsed += elapsedTime;
@@ -19,7 +19,7 @@ void Timer::OnMachineCycle(uint8_t cycles)
 
 void Timer::updateDivider()
 {
-	double remainder = 61.0351563 - dividerElapsed;
+	double remainder = dividerElapsed - 61.0351563;
 	if (remainder >= 0)
 	{
 		divider++;
@@ -30,7 +30,7 @@ void Timer::updateDivider()
 void Timer::updateCounter()
 {
 	double period = period_table[clock_select];
-	double remainder = period - counterElapsed;
+	double remainder = counterElapsed - period;
 	if (remainder >= 0)
 	{
 		if (counter == 0xFF)
@@ -48,31 +48,7 @@ void Timer::updateCounter()
 
 void Timer::update()
 {
-	static uint64_t dividerCounter = cpu->cycleCount;
-	if ((cpu->cycleCount - dividerCounter) * 0.238418579 > 61.0351563)
-	{
-		divider++;
-		dividerCounter = cpu->cycleCount;
-	}
-
-	if (!start)
-		return;
-	double period = period_table[clock_select];
-	static uint64_t timerCounter = cpu->cycleCount;
-	static uint64_t lastCycle = cpu->cycleCount;
-	if ((cpu->cycleCount - timerCounter) * 0.238418579 > period)
-	{
-		if (counter == 0xFF)
-		{
-			std::cout << "Counter tick " << (lastCycle - cpu->cycleCount) << std::endl;
-			counter = modulo;
-			cpu->interrupt(0x50);
-			lastCycle = cpu->cycleCount;
-		}
-		else
-		{
-			counter++;
-		}
-		timerCounter = cpu->cycleCount;
-	}
+	updateDivider();
+	if (start)
+		updateCounter();
 }

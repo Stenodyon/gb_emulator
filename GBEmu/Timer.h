@@ -29,7 +29,7 @@ public:
 	Timer(CPU * cpu) : cpu(cpu) {}
 	~Timer() {}
 
-	void OnMachineCycle(uint8_t cycles);
+	void OnMachineCycle(uint64_t cycles);
 	void update();
 };
 
