@@ -45,6 +45,7 @@ private:
 	Sound sound;
 	Joypad joypad;
 	bool interruptsEnabled = true;
+	bool halted = false;
 
 	struct _int_flag
 	{
@@ -259,7 +260,7 @@ public:
 
 	void SET(uint8_t bit, uint8_t & value)
 	{
-		value |= ~(0x1 << bit);
+		value |= 0x1 << bit;
 	}
 
 	inline void ADD(uint8_t value)
@@ -561,10 +562,10 @@ public:
 			display.winPosX = value;
 			break;
 		}
-		case 0xFF: // Interrupt master enable
+		case 0xFF: // Interrupt Enable
 		{
-			interruptsEnabled = value;
-			std::cout << (interruptsEnabled ? "Enabled" : "Disabled") << " interrupts" << std::endl;
+			std::cout << "Wrote " << hex<uint8_t>(value) << " to interrupt enable" << std::endl;
+			int_enable = value;
 			break;
 		}
 		default:
@@ -637,7 +638,9 @@ public:
 		case 0x40: // V-Blank interrupt
 			int_flag.vblank = 1;
 			break;
-		case 0x50:
+		case 0x50: // Timer interrupt
+			if (int_flag.timer == 0)
+				std::cout << "INT 0x50 flag SET" << std::endl;
 			int_flag.timer = 1;
 			break;
 		default:
@@ -672,16 +675,23 @@ private:
 
 	void checkInterrupts()
 	{
-		if (!interruptsEnabled)
+		if (!halted && !interruptsEnabled)
 			return;
 		if (int_enable.vblank && int_flag.vblank)
+		{
+			int_flag.vblank = false;
 			executeInterrupt(0x40);
+		}
 		else if (int_enable.timer && int_flag.timer)
+		{
+			int_flag.timer = false;
 			executeInterrupt(0x50);
+		}
 	}
 
-	void executeInterrupt(uint8_t value)
+	void executeInterrupt(uint16_t value)
 	{
+		std::cout << "Executing interrupt " << hex<uint16_t>(value) << std::endl;
 		interruptsEnabled = false;
 		push(regs.PC);
 		jump(value);

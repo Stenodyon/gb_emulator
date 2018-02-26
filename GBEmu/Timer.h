@@ -4,6 +4,13 @@ class CPU;
 
 class Timer
 {
+private:
+	double dividerElapsed = 0;
+	double counterElapsed = 0;
+
+	void updateDivider();
+	void updateCounter();
+
 public:
 	CPU * cpu;
 	uint8_t divider, counter, modulo;
@@ -14,7 +21,7 @@ public:
 		struct
 		{
 			uint8_t clock_select : 2;
-			uint8_t stop : 1;
+			uint8_t start : 1;
 		};
 #pragma pack(pop)
 	};
@@ -22,6 +29,7 @@ public:
 	Timer(CPU * cpu) : cpu(cpu) {}
 	~Timer() {}
 
+	void OnMachineCycle(uint8_t cycles);
 	void update();
 };
 

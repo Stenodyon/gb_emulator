@@ -13,12 +13,17 @@ void CPU::step()
 	counter++;
 	//*/
 
+
 	uint16_t currentPointer = regs.PC;
 	if (std::find(breakpoints.begin(), breakpoints.end(), currentPointer) != breakpoints.end())
 	{
 		std::cout << "Breakpoint " << hex<uint16_t>(currentPointer) << std::endl;
 		regs.dump();
 		getchar();
+	}
+	if (currentPointer == 0xC350)
+	{
+		std::cout << "Failing jump HERE" << std::endl;
 	}
 	uint8_t instr = nextB();
 #ifdef _DEBUG
@@ -40,6 +45,15 @@ void CPU::step()
 #endif
 		regs.BC = value;
 		cycleWait(12);
+		break;
+	}
+	case 0x02: // LD (BC), A
+	{
+#ifdef _DEBUG
+		std::cout << "LD (BC), A" << std::endl;
+#endif
+		ram[regs.BC] = regs.A;
+		cycleWait(8);
 		break;
 	}
 	case 0x03: // INC BC
@@ -99,7 +113,7 @@ void CPU::step()
 	{
 		uint16_t address = nextW();
 #ifdef _DEBUG
-		std::cout << hex<uint16_t>(value) << " LD (" << hex<uint16_t>(value) << "), SP" << std::endl;
+		std::cout << hex<uint16_t>(address) << " LD (" << hex<uint16_t>(address) << "), SP" << std::endl;
 #endif
 		ram[address] = regs.SP;
 		cycleWait(20);
@@ -114,6 +128,15 @@ void CPU::step()
 		regs.Cf = ((uint64_t)regs.HL + regs.BC) > 0xFFFF;
 		regs.HL += regs.BC;
 		regs.Nf = 0;
+		cycleWait(8);
+		break;
+	}
+	case 0x0A: // LD A, (BC)
+	{
+#ifdef _DEBUG
+		std::cout << "LD A, (BC)" << std::endl;
+#endif
+		regs.A = ram[regs.BC];
 		cycleWait(8);
 		break;
 	}
@@ -413,6 +436,36 @@ void CPU::step()
 		cycleWait(8);
 		break;
 	}
+	case 0x27: // DAA
+	{
+#ifdef _DEBUG
+		std::cout << "DAA" << std::endl;
+#endif
+		int64_t value = regs.A;
+		if (!regs.Nf) // Addition
+		{
+			if (regs.Hf || (value & 0x0F) > 9)
+				value += 0x06;
+
+			if (regs.Cf || value > 0x9F)
+				value += 0x60;
+		}
+		else // Subtraction
+		{
+			if (regs.Hf)
+				value = (value - 0x06) & 0xFF;
+
+			if (regs.Cf)
+				value -= 0x60;
+		}
+		regs.Hf = 0;
+		regs.Cf |= (value & 0x100) == 0x100;
+		value &= 0xFF;
+		regs.Zf = value == 0;
+		regs.A = (uint8_t)value;
+		cycleWait(4);
+		break;
+	}
 	case 0x28: // JR Z, r8
 	{
 		uint8_t jump = nextB();
@@ -627,6 +680,16 @@ void CPU::step()
 		regs.Cf = ((uint64_t)regs.HL + regs.SP) > 0xFFFF;
 		regs.HL += regs.SP;
 		regs.Nf = 0;
+		cycleWait(8);
+		break;
+	}
+	case 0x3A: // LD A, (HL-)
+	{
+#ifdef _DEBUG
+		std::cout << "LD A, (HL-)" << std::endl;
+#endif
+		regs.A = ram[regs.HL];
+		regs.HL--;
 		cycleWait(8);
 		break;
 	}
@@ -1167,6 +1230,15 @@ void CPU::step()
 #endif
 		ram[regs.HL] = regs.L;
 		cycleWait(8);
+		break;
+	}
+	case 0x76: // HALT
+	{
+#ifdef _DEBUG
+		std::cout << "HALT" << std::endl;
+#endif
+		halted = true;
+		cycleWait(4);
 		break;
 	}
 	case 0x77: // LD (HL), A
@@ -2197,7 +2269,7 @@ void CPU::step()
 	{
 		uint8_t value = nextB();
 #ifdef _DEBUG
-		std::cout << hex << uint8_t > (value) << " SBC A, " << +value << std::endl;
+		std::cout << hex<uint8_t>(value) << " SBC A, " << +value << std::endl;
 #endif
 		SBC(value);
 		cycleWait(8);
