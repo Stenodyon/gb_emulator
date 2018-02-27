@@ -1966,10 +1966,10 @@ void CPU::step()
 #endif
 		if (!regs.Zf)
 		{
+			cycleWait(16);
 			uint16_t returnAddress = regs.PC;
 			push(returnAddress);
 			jump(jumpAddress);
-			cycleWait(24);
 		}
 		else
 		{
@@ -2005,9 +2005,9 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "RST 0x00" << std::endl;
 #endif
+		cycleWait(8);
 		push(regs.PC);
 		jump(0x00);
-		cycleWait(16);
 		break;
 	}
 	case 0xC8: // RET Z
@@ -2068,6 +2068,7 @@ void CPU::step()
 #endif
 		if (regs.Zf)
 		{
+			cycleWait(16);
 			uint16_t returnAddress = regs.PC;
 			push(returnAddress);
 			jump(jumpAddress);
@@ -2085,10 +2086,10 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << hex<uint16_t>(jumpAddress) << " CALL " << hex<uint16_t>(jumpAddress) << std::endl;
 #endif
+		cycleWait(16);
 		uint16_t returnAddress = regs.PC;
 		push(returnAddress);
 		jump(jumpAddress);
-		cycleWait(24);
 		break;
 	}
 	case 0xCE: // ADC A, d8
@@ -2111,9 +2112,9 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "RST 0x08" << std::endl;
 #endif
+		cycleWait(8);
 		push(regs.PC);
 		jump(0x08);
-		cycleWait(16);
 		break;
 	}
 	case 0xD0: // RET NC
@@ -2167,10 +2168,10 @@ void CPU::step()
 #endif
 		if (!regs.Cf)
 		{
+			cycleWait(16);
 			uint16_t returnAddress = regs.PC;
 			push(returnAddress);
 			jump(jumpAddress);
-			cycleWait(24);
 		}
 		else
 		{
@@ -2202,9 +2203,9 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "RST 0x10" << std::endl;
 #endif
+		cycleWait(8);
 		push(regs.PC);
 		jump(0x10);
-		cycleWait(16);
 		break;
 	}
 	case 0xD8: // RET C
@@ -2260,10 +2261,10 @@ void CPU::step()
 #endif
 		if (regs.Cf)
 		{
+			cycleWait(16);
 			uint16_t returnAddress = regs.PC;
 			push(returnAddress);
 			jump(jumpAddress);
-			cycleWait(24);
 		}
 		else
 		{
@@ -2286,9 +2287,9 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "RST 0x18" << std::endl;
 #endif
+		cycleWait(8);
 		push(regs.PC);
 		jump(0x18);
-		cycleWait(16);
 		break;
 	}
 	case 0xE0: // LDH (a8), A
@@ -2346,9 +2347,9 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "RST 0x20" << std::endl;
 #endif
+		cycleWait(8);
 		push(regs.PC);
 		jump(0x20);
-		cycleWait(16);
 		break;
 	}
 	case 0xE8: // ADD SP, r8
@@ -2398,9 +2399,9 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "RST 0x28" << std::endl;
 #endif
+		cycleWait(8);
 		push(regs.PC);
 		jump(0x28);
-		cycleWait(16);
 		break;
 	}
 	case 0xF0: // LDH A, (a8)
@@ -2467,9 +2468,9 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "RST 0x30" << std::endl;
 #endif
+		cycleWait(8);
 		push(regs.PC);
 		jump(0x30);
-		cycleWait(16);
 		break;
 	}
 	case 0xF8: // LD HL, SP+r8
@@ -2529,9 +2530,9 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "RST 0x38" << std::endl;
 #endif
+		cycleWait(8);
 		push(regs.PC);
 		jump(0x38);
-		cycleWait(16);
 		break;
 	}
 	default:

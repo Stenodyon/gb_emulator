@@ -13,6 +13,82 @@ void Display::OnMachineCycle(uint64_t cycles)
 {
 	lastElapsedTime = elapsedTime;
 	elapsedTime += cycles * 4 * 0.238418579;
+
+	for (uint64_t cycle = 0; cycle < cycles * 4; cycle++)
+		incrementFrameCycles();
+}
+
+void Display::incrementFrameCycles()
+{
+	if (frameCycles >= 70224)
+		frameCycles = 0;
+	else
+		frameCycles++;
+
+	ly = (uint8_t)(frameCycles / 456);
+
+	status.ly_coincidence = ly == lyc;
+	if (status.coincidence_int && status.ly_coincidence)
+		ram.cpu->interrupt(0x48);
+
+	if (frameCycles == 456 * 144) // VBLANK
+	{
+		SDL_UpdateTexture(win_texture, NULL, (void*)pixel_buffer, 4 * 160 * sizeof(pixel));
+		SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+		SDL_RenderClear(renderer);
+		SDL_RenderCopy(renderer, win_texture, NULL, NULL);
+		SDL_RenderPresent(renderer);
+#ifdef DISPLAY_DEV
+		SDL_RenderCopy(bg_render, bg_texture, NULL, NULL);
+		SDL_RenderPresent(bg_render);
+#endif
+
+		ram.cpu->interrupt(0x40);
+		if (status.vblank_int)
+			ram.cpu->interrupt(0x48);
+	}
+
+	if (frameCycles >= 456 * 144)
+	{
+		status.stat_mode = 1;
+	}
+	else
+	{
+		uint64_t progress = frameCycles % 456;
+
+		if (progress == 0 && status.oam_int)
+			ram.cpu->interrupt(0x48);
+		else if (progress == 204) // HBLANK
+		{
+			drawLine(ly);
+			if (status.hblank_int)
+				ram.cpu->interrupt(0x48);
+		}
+
+		if (progress < 80)
+			status.stat_mode = 2;
+		else if (progress < 80 + 172)
+			status.stat_mode = 3;
+		else
+			status.stat_mode = 0;
+	}
+}
+
+void Display::renderTile(tile * tile, uint8_t x, uint8_t y)
+{
+	SDL_SetRenderTarget(renderer, bg_texture);
+	for (uint8_t _y = 0; _y < 8; _y++)
+	{
+		for (uint8_t _x = 0; _x < 8; _x++)
+		{
+			uint8_t colorCode = (*tile)[_x + 8 * _y];
+			uint8_t color = bg_palette[colorCode];
+			uint8_t sdl_color = (3 - color) << 6;
+			SDL_SetRenderDrawColor(renderer, sdl_color, sdl_color, sdl_color, 0xFF);
+			SDL_RenderDrawPoint(renderer, (uint64_t)x * 8 + _x, (uint64_t)y * 8 + _y);
+		}
+	}
+	SDL_SetRenderTarget(renderer, NULL);
 }
 
 void Display::setColor(uint8_t color)
@@ -23,16 +99,38 @@ void Display::setColor(uint8_t color)
 
 void Display::drawPixel(uint8_t x, uint8_t y)
 {
-	SDL_Rect pixel{ x * 4, y * 4, 4, 4 };
-	SDL_RenderFillRect(renderer, &pixel);
+	SDL_Rect _pixel{ x * 4, y * 4, 4, 4 };
+	SDL_RenderFillRect(renderer, &_pixel);
+}
+
+void Display::drawSpritePixel(uint8_t x, uint8_t y, uint8_t color)
+{
+	if (color == 0)
+		return;
+	setColor(color);
+	drawPixel(x, y, color);
 }
 
 void Display::drawPixel(uint8_t x, uint8_t y, uint8_t color, bool transparency)
 {
 	if (transparency && color == 0)
 		return;
+#if 0
 	setColor(color);
 	drawPixel(x, y);
+#endif
+
+	uint8_t _color = (3 - color) << 6;
+	for (uint64_t _y = 0; _y < 4; _y++)
+	{
+		for (uint64_t _x = 0; _x < 4; _x++)
+		{
+			uint64_t index = (4 * (uint64_t)x + _x) + 4 * 160 * (4 * (uint64_t)y + _y);
+			pixel * pix = pixel_buffer + index;
+			pix->a = 0xFF;
+			pix->r = pix->g = pix->b = _color;
+		}
+	}
 }
 
 uint8_t Display::getBGColor(uint8_t x, uint8_t y)
@@ -92,9 +190,10 @@ void Display::getVisibleSprites(uint8_t line, sprite * buffer[], uint8_t & count
 	for (uint8_t index = 0; index < 40; index++)
 	{
 		sprite * sprite = oam_base + index;
-		if (line >= sprite->y
-			&& ((!obj_size && line < sprite->y + 8)
-				|| (obj_size && line < sprite->y + 16)))
+		int16_t spriteY = (int16_t)sprite->y - 0x10;
+		if (line >= spriteY
+			&& ((!obj_size && line < spriteY + 8)
+				|| (obj_size && line < spriteY + 16)))
 		{
 			buffer[count] = sprite;
 			count++;
@@ -111,8 +210,8 @@ tile * Display::getSpriteTile(uint8_t index)
 
 uint8_t Display::getSpriteColor(sprite * sprite, uint8_t x, uint8_t y)
 {
-	int16_t spriteX = sprite->x; // -0x08;
-	int16_t spriteY = sprite->y; // - 0x10;
+	int16_t spriteX = sprite->x - 0x08;
+	int16_t spriteY = sprite->y - 0x10;
 	if (x < spriteX || y < spriteY || x >= spriteX + 8)
 		return 0;
 	if (!obj_size)
@@ -167,7 +266,7 @@ void Display::drawLine(uint8_t line)
 				uint8_t color = getSpriteColor(sprite, x, line);
 				if (color != 0)
 				{
-					drawPixel(x - 0x08, line - 0x10, color);
+					drawPixel(x, line, color, true);
 					break;
 				}
 			}
@@ -193,6 +292,7 @@ void Display::setWindowTitle()
 
 void Display::update()
 {
+#if 0
 	//setWindowTitle();
 	status.ly_coincidence = LY() == lyc;
 	if (status.coincidence_int && status.ly_coincidence)
@@ -238,6 +338,7 @@ void Display::update()
 		elapsedTime = remainder;
 	}
 	last_lcd_display_enable = lcd_display_enable;
+#endif
 
 	SDL_Event e;
 	while (SDL_PollEvent(&e))

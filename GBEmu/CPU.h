@@ -810,7 +810,7 @@ public:
 		case 0x43: // Display - Scroll X
 			return display.scrollX;
 		case 0x44: // Display - LY
-			return display.LY();
+			return display.ly;
 		case 0x47: // Display - Background palette
 			return display.bg_palette;
 		case 0x48: // Display - OBJ Palette 0
