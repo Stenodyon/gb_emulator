@@ -6,7 +6,7 @@ class Timer
 {
 private:
 	double dividerElapsed = 0;
-	double counterElapsed = 0;
+	uint64_t cyclesCounter = 0;
 
 	void updateDivider();
 	void updateCounter();

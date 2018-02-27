@@ -2,11 +2,11 @@
 #include "Timer.h"
 #include "CPU.h"
 
-static double period_table[4] = {
-	244.140625,
-	3.81469727,
-	15.2587891,
-	61.0351563
+static uint64_t cycles[4] = {
+	1024,
+	16,
+	64,
+	256
 };
 
 void Timer::OnMachineCycle(uint64_t cycles)
@@ -14,9 +14,9 @@ void Timer::OnMachineCycle(uint64_t cycles)
 	double elapsedTime = cycles * 4 * 0.238418579;
 	dividerElapsed += elapsedTime;
 	if (start)
-		counterElapsed += elapsedTime;
+		cyclesCounter += cycles * 4;
 	else
-		counterElapsed = elapsedTime;
+		cyclesCounter = 0;
 }
 
 void Timer::updateDivider()
@@ -31,8 +31,8 @@ void Timer::updateDivider()
 
 void Timer::updateCounter()
 {
-	double period = period_table[clock_select];
-	double remainder = counterElapsed - period;
+	uint64_t period = cycles[clock_select];
+	uint64_t remainder = cyclesCounter - period;
 	if (remainder >= 0)
 	{
 		if (counter == 0xFF)
@@ -44,7 +44,7 @@ void Timer::updateCounter()
 		{
 			counter++;
 		}
-		counterElapsed = remainder;
+		cyclesCounter = remainder;
 	}
 }
 
