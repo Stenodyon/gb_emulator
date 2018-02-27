@@ -2534,7 +2534,7 @@ void CPU::step()
 	}
 	default:
 	{
-		std::cerr << "ERR: " << hex<uint8_t>(instr) << std::endl;
+		std::cerr << "ERR: Illegal instruction " << hex<uint8_t>(instr) << std::endl;
 		std::ostringstream sstream;
 		sstream << "0x" << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << +instr << std::nouppercase;
 		sstream << " at address 0x" << std::uppercase << std::setfill('0') << std::setw(4) << std::hex << +currentPointer;

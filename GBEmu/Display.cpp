@@ -15,6 +15,26 @@ void Display::OnMachineCycle(uint64_t cycles)
 	elapsedTime += cycles * 4 * 0.238418579;
 }
 
+void Display::setColor(uint8_t color)
+{
+	uint8_t _color = (3 - color) << 6;
+	SDL_SetRenderDrawColor(renderer, _color, _color, _color, 255);
+}
+
+void Display::drawPixel(uint8_t x, uint8_t y)
+{
+	SDL_Rect pixel{ x * 4, y * 4, 4, 4 };
+	SDL_RenderFillRect(renderer, &pixel);
+}
+
+void Display::drawPixel(uint8_t x, uint8_t y, uint8_t color, bool transparency)
+{
+	if (transparency && color == 0)
+		return;
+	setColor(color);
+	drawPixel(x, y);
+}
+
 uint8_t Display::getBGColor(uint8_t x, uint8_t y)
 {
 	const uint8_t tileX = x / 8;
@@ -47,6 +67,14 @@ uint8_t Display::getWindowColor(uint8_t x, uint8_t y)
 	return color;
 }
 
+tile * Display::getTile(uint8_t index)
+{
+	if (bg_win_tile_data_select)
+		return (tile*)(ram.memory + 0x8000) + index;
+	else
+		return (tile*)(ram.memory + 0x9000) + (int8_t)index;
+}
+
 uint8_t Display::getBGColorUnderPixel(uint8_t x, uint8_t y)
 {
 	return getBGColor(x + scrollX, y + scrollY);
@@ -57,94 +85,68 @@ uint8_t Display::getWinColorUnderPixel(uint8_t x, uint8_t y)
 	return getWindowColor(x - (winPosX - 7), y - winPosY);
 }
 
-void Display::drawTileAt(tile * tile, int16_t x, int16_t y, palette * palette, bool transparency)
+void Display::getVisibleSprites(uint8_t line, sprite * buffer[], uint8_t & count)
 {
-	for (uint8_t _y = 0; _y < 8; _y++)
+	count = 0;
+	sprite * oam_base = (sprite*)(ram.memory + 0xFE00);
+	for (uint8_t index = 0; index < 40; index++)
 	{
-		if (y + _y < 0 || y + _y >= 144)
-			continue;
-		for (uint8_t _x = 0; _x < 8; _x++)
+		sprite * sprite = oam_base + index;
+		if (line >= sprite->y
+			&& ((!obj_size && line < sprite->y + 8)
+				|| (obj_size && line < sprite->y + 16)))
 		{
-			if (x + _x < 0 || x + _x >= 160)
-				continue;
-			uint8_t index = _x + 8 * _y;
-			uint8_t colorIndex = (*tile)[index];
-			uint8_t color = (*palette)[colorIndex];
-			drawPixel(x + _x, y + _y, color, transparency);
+			buffer[count] = sprite;
+			count++;
+			if (count == 10)
+				break;
 		}
 	}
 }
 
-void Display::drawSprite(sprite * sprite)
+tile * Display::getSpriteTile(uint8_t index)
 {
-	palette * palette = sprite->palette ? &obj_palette1 : &obj_palette0;
-	if (obj_size)
+	return (tile*)(ram.memory + 0x8000) + index;
+}
+
+uint8_t Display::getSpriteColor(sprite * sprite, uint8_t x, uint8_t y)
+{
+	int16_t spriteX = sprite->x; // -0x08;
+	int16_t spriteY = sprite->y; // - 0x10;
+	if (x < spriteX || y < spriteY || x >= spriteX + 8)
+		return 0;
+	if (!obj_size)
 	{
-		tile * lower = getTile(sprite->chr_code &= ~0x01);
-		tile * upper = lower + 1;
-		drawTileAt(lower, sprite->x - 0x08, sprite->y - 0x10 + 0x08, palette, true);
-		drawTileAt(upper, sprite->x - 0x08, sprite->y - 0x10, palette, true);
+		if (y >= spriteY + 8)
+			return 0;
+		tile * _tile = getSpriteTile(sprite->chr_code);
+		uint8_t relX = x - spriteX;
+		uint8_t relY = y - spriteY;
+		if (sprite->hor_flip)
+			relX = 7 - relX;
+		if (sprite->vert_flip)
+			relY = 7 - relY;
+		palette * palette = sprite->palette ? &obj_palette1 : &obj_palette0;
+		uint8_t colorCode = (*_tile)[relX + 8 * relY];
+		return (*palette)[colorCode];
 	}
 	else
 	{
-		tile * tile = getTile(sprite->chr_code);
-		drawTileAt(tile, sprite->x - 0x08, sprite->y - 0x10, palette, true);
-	}
-}
-
-void Display::drawSprites()
-{
-	static const uint16_t oam_base = 0xFE00;
-	for (uint8_t index = 0; index < 40; index++)
-	{
-		sprite * _sprite = (sprite*)(ram.memory + oam_base) + index;
-		drawSprite(_sprite);
-	}
-}
-
-void Display::drawBGTileAt(tile * tile, int16_t x, int16_t y)
-{
-	drawTileAt(tile, x, y, &bg_palette);
-}
-
-void Display::drawBG()
-{
-	const uint16_t tileData = bg_tilemap_select ? 0x9C000 : 0x9800;
-	for (uint8_t _y = 0; _y < 19; _y++)
-	{
-		uint8_t yIndex = ((uint64_t)_y + scrollY / 8) % 32;
-		for (uint8_t _x = 0; _x < 21; _x++)
-		{
-			uint8_t xIndex = ((uint64_t)_x + scrollX / 8) % 32;
-			uint16_t index = xIndex + 32 * yIndex;
-			uint8_t tileIndex = *(ram.memory + tileData + index);
-			tile * tile = getTile(tileIndex);
-			drawBGTileAt(tile, -(scrollX % 8) + _x * 8, -(scrollY % 8) + _y * 8);
-		}
-	}
-}
-
-void Display::drawWindow()
-{
-	const uint8_t windowX = this->winPosX - 7;
-	const uint8_t windowY = this->winPosY;
-	const uint8_t maxX = std::max<uint8_t>(0, 21 - this->winPosX / 8);
-	const uint8_t maxY = std::max<uint8_t>(0, 19 - this->winPosY / 8);
-	const uint16_t tileData = win_tilemap_select ? 0x9C00 : 0x09800;
-	for (uint8_t _y = 0; _y < maxY; _y++)
-	{
-		for (uint8_t _x = 0; _x < maxX; _x++)
-		{
-			uint16_t index = _x + 32 * _y;
-			uint8_t tileIndex = *(ram.memory + tileData + index);
-			tile * tile = getTile(tileIndex);
-			drawBGTileAt(tile, windowX + 8 * _x, windowY + 8 * _y);
-		}
+		//TODO 8x16 sprite pixel selection
+		if (y >= spriteY + 16)
+			return 0;
+		return 0;
 	}
 }
 
 void Display::drawLine(uint8_t line)
 {
+	sprite * visible_sprites[10];
+	uint8_t visible_count = 0;
+	if (obj_dispay_enable)
+	{
+		getVisibleSprites(line, visible_sprites, visible_count);
+	}
 	for (uint8_t x = 0; x < 160; x++)
 	{
 		if (win_display_enable && line >= winPosY && (x >= (winPosX - 7)))
@@ -156,6 +158,19 @@ void Display::drawLine(uint8_t line)
 		{
 			uint8_t color = getBGColorUnderPixel(x, line);
 			drawPixel(x, line, color);
+		}
+		if (obj_dispay_enable)
+		{
+			for (uint8_t sprite_index = 0; sprite_index < visible_count; sprite_index++)
+			{
+				sprite * sprite = visible_sprites[sprite_index];
+				uint8_t color = getSpriteColor(sprite, x, line);
+				if (color != 0)
+				{
+					drawPixel(x - 0x08, line - 0x10, color);
+					break;
+				}
+			}
 		}
 	}
 }
@@ -182,7 +197,7 @@ void Display::update()
 	status.ly_coincidence = LY() == lyc;
 	if (status.coincidence_int && status.ly_coincidence)
 		ram.cpu->interrupt(0x48);
-	if (lastElapsedTime < VBLANK_us)
+	if (lastElapsedTime < VBLANK_us && elapsedTime < VBLANK_us)
 	{
 		double line_progress = std::fmod(elapsedTime, LINE_us);
 		double last_line_progress = std::fmod(lastElapsedTime, LINE_us);
@@ -211,42 +226,11 @@ void Display::update()
 	{
 		status.stat_mode = 1;
 		ram.cpu->interrupt(0x40);
-		if (status.vblank_int)
-			ram.cpu->interrupt(0x48);
 
-		if (lcd_display_enable && obj_dispay_enable)
-			drawSprites();
 		SDL_RenderPresent(renderer);
-
-		/*
-		if (lcd_display_enable)
-		{
-			auto now = std::chrono::system_clock::now();
-			uint64_t elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_refresh).count();
-			if (elapsed > 16)
-			{
-				SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-				SDL_RenderClear(renderer);
-				SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-				if (bg_display)
-					drawBG();
-				if (win_display_enable)
-					drawWindow();
-				if (obj_dispay_enable)
-					drawSprites();
-				
-				SDL_RenderPresent(renderer);
-				last_refresh = now;
-			}
-		}
-		else if(last_lcd_display_enable)
-		{
-			SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-			SDL_RenderClear(renderer);
-			SDL_RenderPresent(renderer);
-		}
-		//*/
 	}
+	if (status.stat_mode == 1 && status.vblank_int)
+		ram.cpu->interrupt(0x48);
 
 	double remainder = elapsedTime - REFRESH_us;
 	if (remainder > 0) // END OF VBLANK

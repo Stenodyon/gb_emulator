@@ -82,51 +82,17 @@ private:
 		}
 	};
 
-	void setColor(uint8_t color)
-	{
-		uint8_t _color = (3 - color) << 6;
-		SDL_SetRenderDrawColor(renderer, _color, _color, _color, 255);
-	}
-
-	void drawPixel(uint8_t x, uint8_t y)
-	{
-		SDL_Rect pixel{x * 4, y * 4, 4, 4};
-		SDL_RenderFillRect(renderer, &pixel);
-	}
-
-	void drawPixel(uint8_t x, uint8_t y, uint8_t color, bool transparency = false)
-	{
-		if (transparency && color == 0)
-			return;
-		setColor(color);
-		drawPixel(x, y);
-	}
-
+	void setColor(uint8_t color);
+	void drawPixel(uint8_t x, uint8_t y);
+	void drawPixel(uint8_t x, uint8_t y, uint8_t color, bool transparency = false);
 	uint8_t getBGColor(uint8_t x, uint8_t y);
 	uint8_t getWindowColor(uint8_t x, uint8_t y);
 	uint8_t getBGColorUnderPixel(uint8_t x, uint8_t y);
 	uint8_t getWinColorUnderPixel(uint8_t x, uint8_t y);
-
-	tile * getTile(uint8_t index)
-	{
-		if (bg_win_tile_data_select)
-			return (tile*)(ram.memory + 0x8000) + index;
-		else
-			return (tile*)(ram.memory + 0x9000) + (int8_t)index;
-	}
-
-	uint8_t getBackgroundColor(uint8_t color)
-	{
-		return bg_palette[color];
-	}
-
-	void drawTileAt(tile * tile, int16_t x, int16_t y, palette * palette, bool transparency = false);
-	void drawSprite(sprite * sprite);
-	void drawSprites();
-	void drawBGTileAt(tile * tile, int16_t x, int16_t y);
-	void drawBG();
-	void drawWindow();
-
+	uint8_t getSpriteColor(sprite * sprite, uint8_t x, uint8_t y);
+	tile * getSpriteTile(uint8_t index);
+	tile * getTile(uint8_t index);
+	void getVisibleSprites(uint8_t line, sprite * buffer[], uint8_t &count);
 	void drawLine(uint8_t line);
 
 	void setWindowTitle();
@@ -167,7 +133,7 @@ public:
 
 		_lcd_status& operator=(uint8_t value)
 		{
-			this->value = value & 0x7C; return *this;
+			this->value = value & 0x78; return *this;
 		}
 		operator uint8_t() const
 		{

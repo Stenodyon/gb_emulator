@@ -15,6 +15,8 @@ void Timer::OnMachineCycle(uint64_t cycles)
 	dividerElapsed += elapsedTime;
 	if (start)
 		counterElapsed += elapsedTime;
+	else
+		counterElapsed = elapsedTime;
 }
 
 void Timer::updateDivider()

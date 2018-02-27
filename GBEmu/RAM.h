@@ -146,8 +146,11 @@ private:
 #ifdef _DEBUG
 		assert(type != MBCType::ROM);
 #endif
-		ramEnabled = (value & 0x0F) == 0x0A;
+		//ramEnabled = (value & 0x0F) == 0x0A;
+		ramEnabled = value == 0x0A;
+#ifdef _DEBUG
 		std::cout << "External ram " << (ramEnabled ? "enabled" : "disabled") << std::endl;
+#endif
 	}
 
 	void OnROMBankNumber(uint8_t value)
@@ -194,7 +197,10 @@ private:
 #ifdef _DEBUG
 		assert(type != MBCType::ROM);
 #endif
-		uint8_t * pointer = cartridge + ROMBank.value * 0x4000;
+		uint8_t * pointer = cartridge + (uint64_t)(ROMBank.value) * 0x4000;
+#ifdef _DEBUG
+		std::cout << "Switching to ROM BANK " << hex<uint8_t>(ROMBank.value) << std::endl;
+#endif
 		mem[2] = pointer;
 		mem[3] = pointer + 0x2000;
 	}
