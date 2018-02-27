@@ -197,6 +197,7 @@ public:
 	void step();
 	void prefixCB();
 	void run();
+	void updateInput();
 
 	void RLC(uint8_t & value)
 	{

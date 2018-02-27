@@ -5,6 +5,7 @@
 #include <thread>
 
 #include "RAM.h"
+#include "Joypad.h"
 
 struct tile
 {
@@ -52,6 +53,11 @@ static const double REFRESH_us = 16742.7062917;
 
 class Display
 {
+public:
+	pad_status keyboard_status;
+	pad_status controller_status;
+	SDL_GameController * controller;
+
 private:
 	SDL_Window * win;
 	SDL_Renderer * renderer;
@@ -168,7 +174,7 @@ public:
 		{
 			std::cerr << "Could not allocate pixel buffer" << std::endl;
 		}
-		if (SDL_Init(SDL_INIT_VIDEO) != 0)
+		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) != 0)
 		{
 			throw std::runtime_error("SDL: " + std::string(SDL_GetError()));
 		}
@@ -193,11 +199,27 @@ public:
 			SDL_Quit();
 			throw std::runtime_error(msg);
 		}
+		if (SDL_NumJoysticks() > 0)
+		{
+			std::cout << "Controller found" << std::endl;
+			SDL_JoystickEventState(SDL_IGNORE);
+			controller = SDL_GameControllerOpen(0);
+			if (controller == nullptr)
+			{
+				std::cout << "Could not open the controller :(" << std::endl;
+			}
+		}
+		else
+		{
+			std::cout << "No joysticks found" << std::endl;
+		}
 	}
 
 	~Display()
 	{
 		free(pixel_buffer);
+		if(controller != nullptr)
+			SDL_GameControllerClose(controller);
 		SDL_DestroyRenderer(renderer);
 		SDL_DestroyWindow(win);
 		SDL_Quit();

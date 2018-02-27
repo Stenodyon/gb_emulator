@@ -1,4 +1,11 @@
 #pragma once
+
+struct pad_status
+{
+	bool button_a, button_b, button_select, button_start;
+	bool right, left, up, down;
+};
+
 class Joypad
 {
 private:

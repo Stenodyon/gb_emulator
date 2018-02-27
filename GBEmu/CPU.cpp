@@ -25,6 +25,7 @@ void CPU::run()
 			auto delay = std::chrono::milliseconds(4) - computation_time;
 			last_sleep = now;
 			std::this_thread::sleep_for(delay);
+			updateInput();
 		}
 	}
 	std::cout << "--- Execution stopped ---" << std::endl;
@@ -37,4 +38,18 @@ void CPU::DMATranfer(uint8_t source)
 	uint16_t sourceAddress = source << 8;
 	for (uint8_t index = 0; index < 0xA0; index++)
 		ram[destinationAddress + index] = (uint8_t)ram[sourceAddress + index];
+}
+
+
+void CPU::updateInput()
+{
+	SDL_GameControllerUpdate();
+	display.controller_status.button_a = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_B);
+	display.controller_status.button_b = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_A);
+	display.controller_status.button_start = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_START);
+	display.controller_status.button_select = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_BACK);
+	display.controller_status.up = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_DPAD_UP);
+	display.controller_status.down = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_DPAD_DOWN);
+	display.controller_status.left = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_DPAD_LEFT);
+	display.controller_status.right = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT);
 }

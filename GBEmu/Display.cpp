@@ -235,14 +235,14 @@ void Display::update()
 			bool set = e.type == SDL_KEYDOWN;
 			switch (e.key.keysym.sym)
 			{
-			case SDLK_j: ram.cpu->joypad.joypad.button_a = set; break;
-			case SDLK_k: ram.cpu->joypad.joypad.button_b = set; break;
-			case SDLK_u: ram.cpu->joypad.joypad.button_start = set; break;
-			case SDLK_i: ram.cpu->joypad.joypad.button_select = set; break;
-			case SDLK_w: ram.cpu->joypad.joypad.up = set; break;
-			case SDLK_a: ram.cpu->joypad.joypad.left = set; break;
-			case SDLK_s: ram.cpu->joypad.joypad.down = set; break;
-			case SDLK_d: ram.cpu->joypad.joypad.right = set; break;
+			case SDLK_j: keyboard_status.button_a = set; break;
+			case SDLK_k: keyboard_status.button_b = set; break;
+			case SDLK_u: keyboard_status.button_start = set; break;
+			case SDLK_i: keyboard_status.button_select = set; break;
+			case SDLK_w: keyboard_status.up = set; break;
+			case SDLK_a: keyboard_status.left = set; break;
+			case SDLK_s: keyboard_status.down = set; break;
+			case SDLK_d: keyboard_status.right = set; break;
 			}
 			break;
 		}
@@ -251,4 +251,12 @@ void Display::update()
 			break;
 		}
 	}
+	ram.cpu->joypad.joypad.button_a = keyboard_status.button_a | controller_status.button_a;
+	ram.cpu->joypad.joypad.button_b = keyboard_status.button_b | controller_status.button_b;
+	ram.cpu->joypad.joypad.button_start = keyboard_status.button_start | controller_status.button_start;
+	ram.cpu->joypad.joypad.button_select = keyboard_status.button_select | controller_status.button_select;
+	ram.cpu->joypad.joypad.up = keyboard_status.up | controller_status.up;
+	ram.cpu->joypad.joypad.down = keyboard_status.down | controller_status.down;
+	ram.cpu->joypad.joypad.left = keyboard_status.left | controller_status.left;
+	ram.cpu->joypad.joypad.right = keyboard_status.right | controller_status.right;
 }
