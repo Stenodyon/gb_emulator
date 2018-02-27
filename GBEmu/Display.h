@@ -6,9 +6,6 @@
 
 #include "RAM.h"
 
-#define DISPLAY_DEV
-#undef DISPLAY_DEV
-
 struct tile
 {
 	uint8_t data[16];
@@ -77,12 +74,6 @@ private:
 
 	pixel * pixel_buffer;
 	SDL_Texture * win_texture;
-
-#ifdef DISPLAY_DEV
-	SDL_Window * bg_win;
-	SDL_Renderer * bg_render;
-#endif
-
 	uint64_t frameCycles = 0;
 
 	struct palette
@@ -108,13 +99,8 @@ private:
 		}
 	};
 
-	void renderTile(tile * tile, uint8_t x, uint8_t y);
-
 	void incrementFrameCycles();
-	void setColor(uint8_t color);
-	void drawPixel(uint8_t x, uint8_t y);
 	void drawPixel(uint8_t x, uint8_t y, uint8_t color, bool transparency = false);
-	void drawSpritePixel(uint8_t x, uint8_t y, uint8_t color);
 	uint8_t getBGColor(uint8_t x, uint8_t y);
 	uint8_t getWindowColor(uint8_t x, uint8_t y);
 	uint8_t getBGColorUnderPixel(uint8_t x, uint8_t y);
@@ -124,8 +110,6 @@ private:
 	tile * getTile(uint8_t index);
 	void getVisibleSprites(uint8_t line, sprite * buffer[], uint8_t &count);
 	void drawLine(uint8_t line);
-
-	void setWindowTitle();
 
 	//TODO: Implement the Window
 	
@@ -178,7 +162,8 @@ public:
 
 	Display(RAM & ram) : ram(ram)
 	{
-		pixel_buffer = (pixel*)malloc(4 * 4 * 160 * 144 * sizeof(pixel));
+		pixel_buffer = (pixel*)malloc(160 * 144 * sizeof(pixel));
+		std::memset(pixel_buffer, 0, 160 * 144 * sizeof(pixel));
 		if (pixel_buffer == nullptr)
 		{
 			std::cerr << "Could not allocate pixel buffer" << std::endl;
@@ -201,46 +186,18 @@ public:
 			SDL_Quit();
 			throw std::runtime_error(msg);
 		}
-		bg_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 32 * 8, 48 * 8);
-		if (bg_texture == nullptr)
-		{
-			std::string msg = "SDL: " + std::string(SDL_GetError());
-			SDL_Quit();
-			throw std::runtime_error(msg);
-		}
-		win_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 4 * 160, 4 * 144);
+		win_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 160, 144);
 		if (win_texture == nullptr)
 		{
 			std::string msg = "SDL: " + std::string(SDL_GetError());
 			SDL_Quit();
 			throw std::runtime_error(msg);
 		}
-#ifdef DISPLAY_DEV
-		bg_win = SDL_CreateWindow("BG", 200 + 4 * 160, 100, 256, 256, SDL_WINDOW_SHOWN);
-		if (bg_win == nullptr)
-		{
-			std::string msg = "SDL: " + std::string(SDL_GetError());
-			SDL_Quit();
-			throw std::runtime_error(msg);
-		}
-		bg_render = SDL_CreateRenderer(bg_win, -1, SDL_RENDERER_ACCELERATED);
-		if (bg_render == nullptr)
-		{
-			std::string msg = "SDL: " + std::string(SDL_GetError());
-			SDL_Quit();
-			throw std::runtime_error(msg);
-		}
-#endif
 	}
 
 	~Display()
 	{
-#ifdef DISPLAY_DEV
-		SDL_DestroyRenderer(bg_render);
-		SDL_DestroyWindow(bg_win);
-#endif
 		free(pixel_buffer);
-		SDL_DestroyTexture(bg_texture);
 		SDL_DestroyRenderer(renderer);
 		SDL_DestroyWindow(win);
 		SDL_Quit();

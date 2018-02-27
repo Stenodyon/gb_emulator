@@ -189,7 +189,9 @@ private:
 #endif
 		value &= 0x01;
 		ramMode = value;
+#ifdef _DEBUG
 		std::cout << (ramMode ? "ROM" : "RAM") << " selection mode" << std::endl;
+#endif
 	}
 
 	void UpdateROMPointer()

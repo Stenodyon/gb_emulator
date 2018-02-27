@@ -33,15 +33,11 @@ void Display::incrementFrameCycles()
 
 	if (frameCycles == 456 * 144) // VBLANK
 	{
-		SDL_UpdateTexture(win_texture, NULL, (void*)pixel_buffer, 4 * 160 * sizeof(pixel));
+		SDL_UpdateTexture(win_texture, NULL, (void*)pixel_buffer, 160 * sizeof(pixel));
 		SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 		SDL_RenderClear(renderer);
 		SDL_RenderCopy(renderer, win_texture, NULL, NULL);
 		SDL_RenderPresent(renderer);
-#ifdef DISPLAY_DEV
-		SDL_RenderCopy(bg_render, bg_texture, NULL, NULL);
-		SDL_RenderPresent(bg_render);
-#endif
 
 		ram.cpu->interrupt(0x40);
 		if (status.vblank_int)
@@ -74,63 +70,15 @@ void Display::incrementFrameCycles()
 	}
 }
 
-void Display::renderTile(tile * tile, uint8_t x, uint8_t y)
-{
-	SDL_SetRenderTarget(renderer, bg_texture);
-	for (uint8_t _y = 0; _y < 8; _y++)
-	{
-		for (uint8_t _x = 0; _x < 8; _x++)
-		{
-			uint8_t colorCode = (*tile)[_x + 8 * _y];
-			uint8_t color = bg_palette[colorCode];
-			uint8_t sdl_color = (3 - color) << 6;
-			SDL_SetRenderDrawColor(renderer, sdl_color, sdl_color, sdl_color, 0xFF);
-			SDL_RenderDrawPoint(renderer, (uint64_t)x * 8 + _x, (uint64_t)y * 8 + _y);
-		}
-	}
-	SDL_SetRenderTarget(renderer, NULL);
-}
-
-void Display::setColor(uint8_t color)
-{
-	uint8_t _color = (3 - color) << 6;
-	SDL_SetRenderDrawColor(renderer, _color, _color, _color, 255);
-}
-
-void Display::drawPixel(uint8_t x, uint8_t y)
-{
-	SDL_Rect _pixel{ x * 4, y * 4, 4, 4 };
-	SDL_RenderFillRect(renderer, &_pixel);
-}
-
-void Display::drawSpritePixel(uint8_t x, uint8_t y, uint8_t color)
-{
-	if (color == 0)
-		return;
-	setColor(color);
-	drawPixel(x, y, color);
-}
-
 void Display::drawPixel(uint8_t x, uint8_t y, uint8_t color, bool transparency)
 {
 	if (transparency && color == 0)
 		return;
-#if 0
-	setColor(color);
-	drawPixel(x, y);
-#endif
-
 	uint8_t _color = (3 - color) << 6;
-	for (uint64_t _y = 0; _y < 4; _y++)
-	{
-		for (uint64_t _x = 0; _x < 4; _x++)
-		{
-			uint64_t index = (4 * (uint64_t)x + _x) + 4 * 160 * (4 * (uint64_t)y + _y);
-			pixel * pix = pixel_buffer + index;
-			pix->a = 0xFF;
-			pix->r = pix->g = pix->b = _color;
-		}
-	}
+	uint64_t index = (uint64_t)x + 160 * ((uint64_t)y);
+	pixel * pix = pixel_buffer + index;
+	pix->a = 0xFF;
+	pix->r = pix->g = pix->b = _color;
 }
 
 uint8_t Display::getBGColor(uint8_t x, uint8_t y)
@@ -274,72 +222,8 @@ void Display::drawLine(uint8_t line)
 	}
 }
 
-void Display::setWindowTitle()
-{
-	if (last_control != control)
-	{
-		std::string title = lcd_display_enable ? "LCD ON" : "LCD OFF";
-		title += " | ";
-		title += obj_dispay_enable ? "OBJ ENABLED" : "OBJ DISABLED";
-		title += " | ";
-		title += bg_tilemap_select ? "BG HIGH TILEMAP" : "BG LOW TILEMAP";
-		title += " | ";
-		title += win_display_enable ? "WINDOW ENABLED" : "WINDOW DISABLED";
-		SDL_SetWindowTitle(win, title.c_str());
-	}
-	last_control = control;
-}
-
 void Display::update()
 {
-#if 0
-	//setWindowTitle();
-	status.ly_coincidence = LY() == lyc;
-	if (status.coincidence_int && status.ly_coincidence)
-		ram.cpu->interrupt(0x48);
-	if (lastElapsedTime < VBLANK_us && elapsedTime < VBLANK_us)
-	{
-		double line_progress = std::fmod(elapsedTime, LINE_us);
-		double last_line_progress = std::fmod(lastElapsedTime, LINE_us);
-		if (line_progress > OAM_us && last_line_progress < OAM_us) // Just ended OAM period
-		{
-			status.stat_mode = 3;
-		}
-		else if (line_progress > HBLANK_us && last_line_progress < HBLANK_us) // Just reached HBLANK
-		{
-			status.stat_mode = 0;
-
-			if (lcd_display_enable)
-				drawLine(LY());
-
-			if (status.hblank_int)
-				ram.cpu->interrupt(0x48);
-		}
-		else if (last_line_progress > line_progress) // Just reached next line
-		{
-			status.stat_mode = 2;
-			if (status.oam_int)
-				ram.cpu->interrupt(0x48);
-		}
-	}
-	if (elapsedTime > VBLANK_us && lastElapsedTime < VBLANK_us) // Just reached VBLANK
-	{
-		status.stat_mode = 1;
-		ram.cpu->interrupt(0x40);
-
-		SDL_RenderPresent(renderer);
-	}
-	if (status.stat_mode == 1 && status.vblank_int)
-		ram.cpu->interrupt(0x48);
-
-	double remainder = elapsedTime - REFRESH_us;
-	if (remainder > 0) // END OF VBLANK
-	{
-		elapsedTime = remainder;
-	}
-	last_lcd_display_enable = lcd_display_enable;
-#endif
-
 	SDL_Event e;
 	while (SDL_PollEvent(&e))
 	{

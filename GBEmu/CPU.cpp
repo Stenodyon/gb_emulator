@@ -1,12 +1,11 @@
 #include "stdafx.h"
 #include "CPU.h"
 
-static const double delay_2ms = 0.238418579 * 4196 * 2; // (4196 cycles ~= 1ms)
+static const double delay_2ms = 0.238418579 * 4196 * 4; // (4196 cycles ~= 1ms)
 
 void CPU::run()
 {
 	std::cout << "--- Starting execution ---" << std::endl;
-	uint64_t counter = 0;
 	auto last_sleep = std::chrono::system_clock::now();
 	while (running)
 	{
@@ -17,12 +16,13 @@ void CPU::run()
 		display.update();
 		checkInterrupts();
 		std::this_thread::yield();
-		counter++;
-		if (counter == 2 * 4196) // Amount of cycles in 2 ms
+		int64_t remainder = cycleCount - 4 * 4196;
+		if (remainder > 0) // Amount of cycles in 4 ms
 		{
+			cycleCount = remainder;
 			auto now = std::chrono::system_clock::now();
 			auto computation_time = now - last_sleep;
-			auto delay = std::chrono::milliseconds(2) - computation_time;
+			auto delay = std::chrono::milliseconds(4) - computation_time;
 			last_sleep = now;
 			std::this_thread::sleep_for(delay);
 		}
