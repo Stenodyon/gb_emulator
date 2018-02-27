@@ -37,6 +37,9 @@ public:
 	bool running = true;
 	Joypad joypad;
 
+	uint8_t unused_regsiter_03;
+	uint8_t unused_regsiter_08;
+
 private:
 	Regs regs;
 	RAM ram;
@@ -177,7 +180,11 @@ public:
 	void push(uint16_t value)
 	{
 		regs.SP -= 2;
-		ram[regs.SP] = value;
+		uint8_t * ptr = (uint8_t*)&value;
+		cycleWait(4);
+		ram[regs.SP] = ptr[0];
+		cycleWait(4);
+		ram[regs.SP+1] = ptr[1];
 	}
 
 	uint16_t pop()
@@ -417,9 +424,9 @@ public:
 		case 0x04: // Timer Divider
 		{
 #ifdef _DEBUG
-			std::cout << "Wrote " << hex<uint8_t>(value) << " to timer divider" << std::endl;
+			std::cout << "Reset timer divider" << std::endl;
 #endif
-			timer.divider = 0x00;
+			timer.resetDivider();
 			break;
 		}
 		case 0x05: // Timer counter
@@ -443,7 +450,7 @@ public:
 #ifdef _DEBUG
 			std::cout << "Wrote " << hex<uint8_t>(value) << " to timer control" << std::endl;
 #endif
-			timer.control = value;
+			timer.setControlRegister(value);
 			break;
 		}
 		case 0x0F: // Interrupt flag
@@ -758,6 +765,8 @@ public:
 			return serial.data;
 		case 0x02: // Serial transfer control
 			return serial.control;
+		case 0x03: // UNUSED REGISTER
+			return unused_regsiter_03;
 		case 0x04: // Timer divider
 			return timer.divider;
 		case 0x05: // Timer counter
@@ -766,6 +775,8 @@ public:
 			return timer.modulo;
 		case 0x07: // Timer control
 			return timer.control;
+		case 0x08: // UNUSED REGISTER
+			return unused_regsiter_08;
 		case 0x0F: // Interrupt flag
 			return int_flag;
 		case 0x11: // Sound - Channel 1 Sound lengh

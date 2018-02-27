@@ -5,15 +5,22 @@ class CPU;
 class Timer
 {
 private:
-	double dividerElapsed = 0;
-	uint64_t cyclesCounter = 0;
-
-	void updateDivider();
-	void updateCounter();
+	bool getTimerIncSignal();
+	void incrementCounter();
 
 public:
 	CPU * cpu;
-	uint8_t divider, counter, modulo;
+	union
+	{
+		uint16_t internal_counter;
+#pragma pack(push, 1)
+		struct {
+			uint8_t divider_lower;
+			uint8_t divider;
+		};
+#pragma pack(pop)
+	};
+	uint8_t counter, modulo;
 	union
 	{
 		uint8_t control;
@@ -30,6 +37,7 @@ public:
 	~Timer() {}
 
 	void OnMachineCycle(uint64_t cycles);
-	void update();
+	void resetDivider();
+	void setControlRegister(uint8_t value);
 };
 

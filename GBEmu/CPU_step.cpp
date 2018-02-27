@@ -1250,8 +1250,9 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD (HL), A" << std::endl;
 #endif
+		cycleWait(4);
 		ram[regs.HL] = regs.A;
-		cycleWait(8);
+		cycleWait(4);
 		break;
 	}
 	case 0x78: // LD A, B
@@ -1313,8 +1314,9 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD A, (HL)" << std::endl;
 #endif
+		cycleWait(4);
 		regs.A = ram[regs.HL];
-		cycleWait(8);
+		cycleWait(4);
 		break;
 	}
 	case 0x7F: // LD A, A
@@ -1980,8 +1982,8 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "PUSH BC" << std::endl;
 #endif
+		cycleWait(8);
 		push(regs.BC);
-		cycleWait(16);
 		break;
 	}
 	case 0xC6: // ADD A, d8
@@ -2181,8 +2183,8 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "PUSH DE" << std::endl;
 #endif
+		cycleWait(8);
 		push(regs.DE);
-		cycleWait(16);
 		break;
 	}
 	case 0xD6: // SUB d8
@@ -2296,8 +2298,8 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << hex<uint8_t>(nextVal) << " LD (" << hex<uint16_t>(value) << "), A" << std::endl;
 #endif
-		ram[value] = regs.A;
 		cycleWait(12);
+		ram[value] = regs.A;
 		break;
 	}
 	case 0xE1: // POP HL
@@ -2325,8 +2327,8 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "PUSH HL" << std::endl;
 #endif
+		cycleWait(8);
 		push(regs.HL);
-		cycleWait(16);
 		break;
 	}
 	case 0xE6: // AND d8
@@ -2408,8 +2410,8 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << hex<uint8_t>(nextVal) << " LD A, (" << hex<uint16_t>(value) << ")" << std::endl;
 #endif
-		regs.A = ram[value];
 		cycleWait(12);
+		regs.A = ram[value];
 		break;
 	}
 	case 0xF1: // POP AF
@@ -2446,8 +2448,8 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "PUSH AF" << std::endl;
 #endif
+		cycleWait(8);
 		push(regs.AF);
-		cycleWait(16);
 		break;
 	}
 	case 0xF6: // OR d8

@@ -15,7 +15,6 @@ void CPU::run()
 		else
 			cycleWait(4);
 		display.update();
-		timer.update();
 		checkInterrupts();
 		std::this_thread::yield();
 		counter++;
