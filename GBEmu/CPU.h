@@ -188,20 +188,20 @@ public:
 	{
 		regs.SP -= 2;
 		uint8_t * ptr = (uint8_t*)&value;
-		cycleWait(4);
 		ram.writeB(regs.SP, ptr[0]);
 		cycleWait(4);
 		ram.writeB(regs.SP + 1, ptr[1]);
+		cycleWait(4);
 	}
 
 	uint16_t pop()
 	{
 		uint16_t value;
 		uint8_t * ptr = (uint8_t*)&value;
-		cycleWait(4);
 		ptr[0] = ram.read(regs.SP);
 		cycleWait(4);
 		ptr[1] = ram.read(regs.SP + 1);
+		cycleWait(4);
 		regs.SP += 2;
 		return value;
 	}

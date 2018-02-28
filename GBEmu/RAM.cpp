@@ -75,11 +75,12 @@ void RAM::writeB(uint16_t address, uint8_t value)
 		break;
 	case MBC::MBC1:
 		if (address < 0x2000) // RAM Enable
-			ram_enabled = value == 0xA0;
+			ram_enabled = value == 0x0A;
 		else if (address < 0x4000) // ROM bank number
 		{
 			uint8_t _value = value & 0x1F;
 			rom_bank.lower = _value == 0 ? 0x01 : value;
+			//std::cout << "New rom bank selected: " << hex<uint8_t>(rom_bank) << std::endl;
 		}
 		else if (address < 0x6000) // RAM/ROM bank number
 		{
@@ -89,7 +90,7 @@ void RAM::writeB(uint16_t address, uint8_t value)
 				rom_bank.upper = value;
 		}
 		else if (address < 0x8000) // Mode select
-			ram_enabled = value;
+			ram_mode = value;
 		else if (address < 0xA000) // Video RAM
 			cpu->display.vram[address - 0x8000] = value;
 		else if (address < 0xC000) // External RAM
@@ -109,11 +110,9 @@ void RAM::writeB(uint16_t address, uint8_t value)
 		else
 			cpu->OnIOWrite(0xFF, value);
 		break;
-#ifdef _DEBUG
 	default:
 		std::cerr << "Unimplemented MBC" << std::endl;
 		exit(-1);
-#endif
 	}
 }
 

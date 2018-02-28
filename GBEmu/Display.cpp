@@ -58,6 +58,7 @@ void Display::incrementFrameCycles()
 			std::cout << "Window off, on row " << +progress << std::endl;
 		last_win_enable = win_display_enable;
 
+#if 0
 		if (progress >= 80 && progress < 252)
 		{
 			static uint8_t last_column = 0;
@@ -65,6 +66,7 @@ void Display::incrementFrameCycles()
 			drawLine(ly, last_column, current_column + 1);
 			last_column = current_column + 1;
 		}
+#endif
 
 		if (progress == 0) // new line
 		{
@@ -74,7 +76,7 @@ void Display::incrementFrameCycles()
 
 		else if (progress == 252) // HBLANK
 		{
-			//drawLine(ly, 0, 160);
+			drawLine(ly);
 			if (status.hblank_int)
 				cpu->interrupt(0x48);
 		}
@@ -204,7 +206,7 @@ uint8_t Display::getSpriteColor(sprite * sprite, uint8_t x, uint8_t y)
 	}
 }
 
-void Display::drawLine(uint8_t line, uint8_t from, uint8_t to)
+void Display::drawLine(uint8_t line)
 {
 	sprite * visible_sprites[10];
 	uint8_t visible_count = 0;
@@ -212,8 +214,14 @@ void Display::drawLine(uint8_t line, uint8_t from, uint8_t to)
 	{
 		getVisibleSprites(line, visible_sprites, visible_count);
 	}
-	for (uint8_t x = from; x < to; x++)
+	for (uint8_t x = 0; x < 160; x++)
 	{
+		uint8_t bgcolor;
+		if (bg_display || obj_dispay_enable)
+		{
+			bgcolor = getBGColorUnderPixel(x, line);
+		}
+
 		if (win_display_enable && line >= winPosY && (x >= (winPosX - 7)))
 		{
 			uint8_t color = getWinColorUnderPixel(x, line);
@@ -221,8 +229,7 @@ void Display::drawLine(uint8_t line, uint8_t from, uint8_t to)
 		}
 		else if (bg_display)
 		{
-			uint8_t color = getBGColorUnderPixel(x, line);
-			drawPixel(x, line, color);
+			drawPixel(x, line, bgcolor);
 		}
 		if (obj_dispay_enable)
 		{
@@ -230,7 +237,7 @@ void Display::drawLine(uint8_t line, uint8_t from, uint8_t to)
 			{
 				sprite * sprite = visible_sprites[sprite_index];
 				uint8_t color = getSpriteColor(sprite, x, line);
-				if (color != 0)
+				if (color != 0 && (!sprite->priority || bgcolor == 0))
 				{
 					drawPixel(x, line, color, true);
 					break;
