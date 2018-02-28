@@ -90,15 +90,25 @@ void Display::incrementFrameCycles()
 	}
 }
 
+const Display::pixel color_palette[4] = {
+	Display::pixel{ 255, 208, 248, 224 },
+	Display::pixel{ 255, 112, 192, 136 },
+	Display::pixel{ 255, 80, 104, 48 },
+	Display::pixel{ 255, 32, 24, 8 },
+};
+
 void Display::drawPixel(uint8_t x, uint8_t y, uint8_t color, bool transparency)
 {
 	if (transparency && color == 0)
 		return;
-	uint8_t _color = (3 - color) << 6;
 	uint64_t index = (uint64_t)x + 160 * ((uint64_t)y);
 	pixel * pix = pixel_buffer + index;
+	std::memcpy(pix, &(color_palette[color]), sizeof(pixel));
+#if 0
+	uint8_t _color = (3 - color) << 6;
 	pix->a = 0xFF;
 	pix->r = pix->g = pix->b = _color;
+#endif
 }
 
 uint8_t Display::getBGColor(uint8_t x, uint8_t y)
@@ -114,7 +124,7 @@ uint8_t Display::getBGColor(uint8_t x, uint8_t y)
 	const uint8_t pixelIndex = pixelX + 8 * pixelY;
 	const uint8_t colorCode = (*tile)[pixelIndex];
 	const uint8_t color = bg_palette[colorCode];
-	return color;
+	return colorCode;
 }
 
 uint8_t Display::getWindowColor(uint8_t x, uint8_t y)
@@ -195,14 +205,25 @@ uint8_t Display::getSpriteColor(sprite * sprite, uint8_t x, uint8_t y)
 			relY = 7 - relY;
 		palette * palette = sprite->palette ? &obj_palette1 : &obj_palette0;
 		uint8_t colorCode = (*_tile)[relX + 8 * relY];
-		return (*palette)[colorCode];
+		return colorCode;
+		//return (*palette)[colorCode];
 	}
 	else
 	{
 		//TODO 8x16 sprite pixel selection
 		if (y >= spriteY + 16)
 			return 0;
-		return 0;
+		uint8_t relX = x - spriteX;
+		uint8_t relY = y - spriteY;
+		if (sprite->hor_flip)
+			relX = 7 - relX;
+		if (sprite->vert_flip)
+			relY = 15 - relY;
+		uint8_t char_code = relY < 8 ? sprite->chr_code & ~0x01 : sprite->chr_code | 0x01;
+		tile * _tile = getSpriteTile(char_code);
+		palette * palette = sprite->palette ? &obj_palette1 : &obj_palette0;
+		uint8_t colorCode = (*_tile)[relX + 8 * (relY % 8)];
+		return colorCode;
 	}
 }
 
@@ -229,17 +250,20 @@ void Display::drawLine(uint8_t line)
 		}
 		else if (bg_display)
 		{
-			drawPixel(x, line, bgcolor);
+			uint8_t color = bg_palette[bgcolor];
+			drawPixel(x, line, color);
 		}
 		if (obj_dispay_enable)
 		{
 			for (uint8_t sprite_index = 0; sprite_index < visible_count; sprite_index++)
 			{
 				sprite * sprite = visible_sprites[sprite_index];
-				uint8_t color = getSpriteColor(sprite, x, line);
-				if (color != 0 && (!sprite->priority || bgcolor == 0))
+				uint8_t colorCode = getSpriteColor(sprite, x, line);
+				if (colorCode != 0 && (!sprite->priority || bgcolor == 0))
 				{
-					drawPixel(x, line, color, true);
+					palette * pal = sprite->palette ? &obj_palette1 : &obj_palette0;
+					uint8_t color = (*pal)[colorCode];
+					drawPixel(x, line, colorCode, true);
 					break;
 				}
 			}

@@ -69,6 +69,7 @@ private:
 	double lastElapsedTime = 0;
 	double elapsedTime = 0;
 
+public:
 	union pixel
 	{
 		uint8_t data[4];
@@ -81,6 +82,7 @@ private:
 	};
 	static_assert(sizeof(pixel) == 4, "pixel struct is not 4 bytes");
 
+private:
 	pixel * pixel_buffer;
 	SDL_Texture * win_texture;
 	uint64_t frameCycles = 0;
