@@ -40,13 +40,13 @@ public:
 	uint8_t unused_regsiter_03;
 	uint8_t unused_regsiter_08;
 
-private:
 	Regs regs;
 	RAM ram;
 	Display display;
 	Serial serial;
 	Timer timer;
 	Sound sound;
+private:
 	bool interruptsEnabled = true;
 	bool halted = false;
 	bool double_speed = false;
@@ -92,7 +92,7 @@ private:
 	_speed_switch speed_switch;
 
 public:
-	CPU(uint8_t * program_data, size_t size) : ram(program_data, size, this) , display(ram), timer(this)
+	CPU(Cartridge * cart) : ram(cart, this) , display(this), timer(this)
 	{
 		jump(0x0000);
 #if 0
@@ -152,14 +152,17 @@ public:
 
 	uint8_t nextB()
 	{
-		uint8_t value = ram[regs.PC];
+		uint8_t value = ram.read(regs.PC);
 		regs.PC++;
 		return value;
 	}
 
 	uint16_t nextW()
 	{
-		uint16_t value = ram[regs.PC];
+		uint16_t value;
+		uint8_t * ptr = (uint8_t*)&value;
+		ptr[0] = ram.read(regs.PC);
+		ptr[1] = ram.read(regs.PC + 1);
 		regs.PC += 2;
 		return value;
 	}
@@ -186,9 +189,9 @@ public:
 		regs.SP -= 2;
 		uint8_t * ptr = (uint8_t*)&value;
 		cycleWait(4);
-		ram[regs.SP] = ptr[0];
+		ram.writeB(regs.SP, ptr[0]);
 		cycleWait(4);
-		ram[regs.SP + 1] = ptr[1];
+		ram.writeB(regs.SP + 1, ptr[1]);
 	}
 
 	uint16_t pop()
@@ -196,9 +199,9 @@ public:
 		uint16_t value;
 		uint8_t * ptr = (uint8_t*)&value;
 		cycleWait(4);
-		ptr[0] = ram[regs.SP];
+		ptr[0] = ram.read(regs.SP);
 		cycleWait(4);
-		ptr[1] = ram[regs.SP + 1];
+		ptr[1] = ram.read(regs.SP + 1);
 		regs.SP += 2;
 		return value;
 	}

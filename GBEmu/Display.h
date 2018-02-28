@@ -58,11 +58,14 @@ public:
 	pad_status controller_status;
 	SDL_GameController * controller;
 
+	uint8_t vram[0x2000];
+	uint8_t oam_ram[0xA0];
+
 private:
 	SDL_Window * win;
 	SDL_Renderer * renderer;
 	SDL_Texture * bg_texture;
-	RAM & ram;
+	CPU * cpu;
 	double lastElapsedTime = 0;
 	double elapsedTime = 0;
 
@@ -166,7 +169,7 @@ public:
 	uint8_t ly, lyc;
 	palette bg_palette, obj_palette0, obj_palette1;
 
-	Display(RAM & ram) : ram(ram)
+	Display(CPU * cpu) : cpu(cpu)
 	{
 		pixel_buffer = (pixel*)malloc(160 * 144 * sizeof(pixel));
 		std::memset(pixel_buffer, 0, 160 * 144 * sizeof(pixel));

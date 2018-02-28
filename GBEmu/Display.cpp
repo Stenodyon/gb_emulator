@@ -29,7 +29,7 @@ void Display::incrementFrameCycles()
 
 	status.ly_coincidence = ly == lyc;
 	if (status.coincidence_int && status.ly_coincidence)
-		ram.cpu->interrupt(0x48);
+		cpu->interrupt(0x48);
 
 	if (frameCycles == 456 * 144) // VBLANK
 	{
@@ -39,9 +39,9 @@ void Display::incrementFrameCycles()
 		SDL_RenderCopy(renderer, win_texture, NULL, NULL);
 		SDL_RenderPresent(renderer);
 
-		ram.cpu->interrupt(0x40);
+		cpu->interrupt(0x40);
 		if (status.vblank_int)
-			ram.cpu->interrupt(0x48);
+			cpu->interrupt(0x48);
 	}
 
 	if (frameCycles >= 456 * 144)
@@ -69,14 +69,14 @@ void Display::incrementFrameCycles()
 		if (progress == 0) // new line
 		{
 			if (status.oam_int)
-				ram.cpu->interrupt(0x48);
+				cpu->interrupt(0x48);
 		}
 
 		else if (progress == 252) // HBLANK
 		{
 			//drawLine(ly, 0, 160);
 			if (status.hblank_int)
-				ram.cpu->interrupt(0x48);
+				cpu->interrupt(0x48);
 		}
 
 		if (progress < 80)
@@ -104,8 +104,8 @@ uint8_t Display::getBGColor(uint8_t x, uint8_t y)
 	const uint8_t tileX = x / 8;
 	const uint8_t tileY = y / 8;
 	const uint16_t tileIndex = tileX + 32 * tileY;
-	const uint16_t tileData = bg_tilemap_select ? 0x9C000 : 0x9800;
-	const uint8_t tileCode = *(ram.memory + tileData + tileIndex);
+	const uint16_t tileData = bg_tilemap_select ? 0x1C00 : 0x1800;
+	const uint8_t tileCode = *(vram + tileData + tileIndex);
 	tile * tile = getTile(tileCode);
 	const uint8_t pixelX = x & 0x07;
 	const uint8_t pixelY = y & 0x07;
@@ -120,8 +120,8 @@ uint8_t Display::getWindowColor(uint8_t x, uint8_t y)
 	const uint8_t tileX = x / 8;
 	const uint8_t tileY = y / 8;
 	const uint16_t tileIndex = tileX + 32 * tileY;
-	const uint16_t tileData = win_tilemap_select ? 0x9C00 : 0x09800;
-	const uint8_t tileCode = *(ram.memory + tileData + tileIndex);
+	const uint16_t tileData = win_tilemap_select ? 0x1C00 : 0x1800;
+	const uint8_t tileCode = *(vram + tileData + tileIndex);
 	tile * tile = getTile(tileCode);
 	const uint8_t pixelX = x & 0x07;
 	const uint8_t pixelY = y & 0x07;
@@ -134,9 +134,9 @@ uint8_t Display::getWindowColor(uint8_t x, uint8_t y)
 tile * Display::getTile(uint8_t index)
 {
 	if (bg_win_tile_data_select)
-		return (tile*)(ram.memory + 0x8000) + index;
+		return (tile*)vram + index;
 	else
-		return (tile*)(ram.memory + 0x9000) + (int8_t)index;
+		return (tile*)(vram + 0x1000) + (int8_t)index;
 }
 
 uint8_t Display::getBGColorUnderPixel(uint8_t x, uint8_t y)
@@ -152,7 +152,7 @@ uint8_t Display::getWinColorUnderPixel(uint8_t x, uint8_t y)
 void Display::getVisibleSprites(uint8_t line, sprite * buffer[], uint8_t & count)
 {
 	count = 0;
-	sprite * oam_base = (sprite*)(ram.memory + 0xFE00);
+	sprite * oam_base = (sprite*)oam_ram;
 	for (uint8_t index = 0; index < 40; index++)
 	{
 		sprite * sprite = oam_base + index;
@@ -171,7 +171,7 @@ void Display::getVisibleSprites(uint8_t line, sprite * buffer[], uint8_t & count
 
 tile * Display::getSpriteTile(uint8_t index)
 {
-	return (tile*)(ram.memory + 0x8000) + index;
+	return (tile*)vram + index;
 }
 
 uint8_t Display::getSpriteColor(sprite * sprite, uint8_t x, uint8_t y)
@@ -265,16 +265,16 @@ void Display::update()
 			break;
 		}
 		case SDL_QUIT:
-			ram.cpu->running = false;
+			cpu->running = false;
 			break;
 		}
 	}
-	ram.cpu->joypad.joypad.button_a = keyboard_status.button_a | controller_status.button_a;
-	ram.cpu->joypad.joypad.button_b = keyboard_status.button_b | controller_status.button_b;
-	ram.cpu->joypad.joypad.button_start = keyboard_status.button_start | controller_status.button_start;
-	ram.cpu->joypad.joypad.button_select = keyboard_status.button_select | controller_status.button_select;
-	ram.cpu->joypad.joypad.up = keyboard_status.up | controller_status.up;
-	ram.cpu->joypad.joypad.down = keyboard_status.down | controller_status.down;
-	ram.cpu->joypad.joypad.left = keyboard_status.left | controller_status.left;
-	ram.cpu->joypad.joypad.right = keyboard_status.right | controller_status.right;
+	cpu->joypad.joypad.button_a = keyboard_status.button_a | controller_status.button_a;
+	cpu->joypad.joypad.button_b = keyboard_status.button_b | controller_status.button_b;
+	cpu->joypad.joypad.button_start = keyboard_status.button_start | controller_status.button_start;
+	cpu->joypad.joypad.button_select = keyboard_status.button_select | controller_status.button_select;
+	cpu->joypad.joypad.up = keyboard_status.up | controller_status.up;
+	cpu->joypad.joypad.down = keyboard_status.down | controller_status.down;
+	cpu->joypad.joypad.left = keyboard_status.left | controller_status.left;
+	cpu->joypad.joypad.right = keyboard_status.right | controller_status.right;
 }

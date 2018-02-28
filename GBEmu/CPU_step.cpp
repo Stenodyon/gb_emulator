@@ -46,7 +46,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD (BC), A" << std::endl;
 #endif
-		ram[regs.BC] = regs.A;
+		ram.writeB(regs.BC, regs.A);
 		cycleWait(8);
 		break;
 	}
@@ -109,7 +109,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << hex<uint16_t>(address) << " LD (" << hex<uint16_t>(address) << "), SP" << std::endl;
 #endif
-		ram[address] = regs.SP;
+		ram.writeW(address, regs.SP);
 		cycleWait(20);
 		break;
 	}
@@ -130,7 +130,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD A, (BC)" << std::endl;
 #endif
-		regs.A = ram[regs.BC];
+		regs.A = ram.read(regs.BC);
 		cycleWait(8);
 		break;
 	}
@@ -214,7 +214,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD (DE), A" << std::endl;
 #endif
-		ram[regs.DE] = regs.A;
+		ram.writeB(regs.DE, regs.A);
 		cycleWait(8);
 		break;
 	}
@@ -301,8 +301,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD A, (DE)" << std::endl;
 #endif
-		uint8_t value = ram[regs.DE];
-		regs.A = value;
+		regs.A = ram.read(regs.DE);
 		cycleWait(8);
 		break;
 	}
@@ -390,7 +389,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD (HL+), A" << std::endl;
 #endif
-		ram[regs.HL] = regs.A;
+		ram.writeB(regs.HL, regs.A);
 		regs.HL++;
 		cycleWait(8);
 		break;
@@ -502,7 +501,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD A, (HL+)" << std::endl;
 #endif
-		regs.A = ram[regs.HL];
+		regs.A = ram.read(regs.HL);
 		regs.HL++;
 		cycleWait(8);
 		break;
@@ -593,7 +592,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD (" << hex<uint16_t>(regs.HL) << "), A; HL--" << std::endl;
 #endif
-		ram[regs.HL] = regs.A;
+		ram.writeB(regs.HL, regs.A);
 		regs.HL--;
 		cycleWait(8);
 		break;
@@ -612,12 +611,12 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "INC B" << std::endl;
 #endif
-		uint8_t value = ram[regs.HL];
+		uint8_t value = ram.read(regs.HL);
 		regs.Hf = halfcarry8(value, 0x01);
 		value++;
 		regs.Zf = value == 0;
 		regs.Nf = 0;
-		ram[regs.HL] = value;
+		ram.writeB(regs.HL, value);
 		cycleWait(12);
 		break;
 	}
@@ -626,12 +625,12 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "DEC (HL)" << std::endl;
 #endif
-		uint8_t value = ram[regs.HL];
+		uint8_t value = ram.read(regs.HL);
 		regs.Hf = halfcarry_sub(value, 0x01);
 		value--;
 		regs.Zf = value == 0;
 		regs.Nf = 1;
-		ram[regs.HL] = value;
+		ram.writeB(regs.HL, value);
 		cycleWait(12);
 		break;
 	}
@@ -641,7 +640,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << hex<uint16_t>(value) << " LD (HL), " << +value << std::endl;
 #endif
-		ram[regs.HL] = value;
+		ram.writeB(regs.HL, value);
 		cycleWait(12);
 		break;
 	}
@@ -690,7 +689,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD A, (HL-)" << std::endl;
 #endif
-		regs.A = ram[regs.HL];
+		regs.A = ram.read(regs.HL);
 		regs.HL--;
 		cycleWait(8);
 		break;
@@ -807,7 +806,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD B, (HL)" << std::endl;
 #endif
-		regs.B = ram[regs.HL];
+		regs.B = ram.read(regs.HL);
 		cycleWait(8);
 		break;
 	}
@@ -879,7 +878,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD C, (HL)" << std::endl;
 #endif
-		regs.C = ram[regs.HL];
+		regs.C = ram.read(regs.HL);
 		cycleWait(8);
 		break;
 	}
@@ -951,7 +950,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD D, (HL)" << std::endl;
 #endif
-		regs.D = ram[regs.HL];
+		regs.D = ram.read(regs.HL);
 		cycleWait(8);
 		break;
 	}
@@ -1023,7 +1022,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD E, (HL)" << std::endl;
 #endif
-		regs.E = ram[regs.HL];
+		regs.E = ram.read(regs.HL);
 		cycleWait(8);
 		break;
 	}
@@ -1095,7 +1094,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD H, (HL)" << std::endl;
 #endif
-		regs.H = ram[regs.HL];
+		regs.H = ram.read(regs.HL);
 		cycleWait(8);
 		break;
 	}
@@ -1167,7 +1166,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD L, (HL)" << std::endl;
 #endif
-		regs.L = ram[regs.HL];
+		regs.L = ram.read(regs.HL);
 		cycleWait(8);
 		break;
 	}
@@ -1185,7 +1184,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD (HL), B" << std::endl;
 #endif
-		ram[regs.HL] = regs.B;
+		ram.writeB(regs.HL, regs.B);
 		cycleWait(8);
 		break;
 	}
@@ -1194,7 +1193,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD (HL), C" << std::endl;
 #endif
-		ram[regs.HL] = regs.C;
+		ram.writeB(regs.HL, regs.C);
 		cycleWait(8);
 		break;
 	}
@@ -1203,7 +1202,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD (HL), D" << std::endl;
 #endif
-		ram[regs.HL] = regs.D;
+		ram.writeB(regs.HL, regs.D);
 		cycleWait(8);
 		break;
 	}
@@ -1212,7 +1211,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD (HL), E" << std::endl;
 #endif
-		ram[regs.HL] = regs.E;
+		ram.writeB(regs.HL, regs.E);
 		cycleWait(8);
 		break;
 	}
@@ -1221,7 +1220,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD (HL), H" << std::endl;
 #endif
-		ram[regs.HL] = regs.H;
+		ram.writeB(regs.HL, regs.H);
 		cycleWait(8);
 		break;
 	}
@@ -1230,7 +1229,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD (HL), L" << std::endl;
 #endif
-		ram[regs.HL] = regs.L;
+		ram.writeB(regs.HL, regs.L);
 		cycleWait(8);
 		break;
 	}
@@ -1249,7 +1248,7 @@ void CPU::step()
 		std::cout << "LD (HL), A" << std::endl;
 #endif
 		cycleWait(4);
-		ram[regs.HL] = regs.A;
+		ram.writeB(regs.HL, regs.A);
 		cycleWait(4);
 		break;
 	}
@@ -1313,7 +1312,7 @@ void CPU::step()
 		std::cout << "LD A, (HL)" << std::endl;
 #endif
 		cycleWait(4);
-		regs.A = ram[regs.HL];
+		regs.A = ram.read(regs.HL);
 		cycleWait(4);
 		break;
 	}
@@ -1385,7 +1384,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "ADD A, (HL)" << std::endl;
 #endif
-		ADD(ram[regs.HL]);
+		ADD(ram.read(regs.HL));
 		cycleWait(8);
 		break;
 	}
@@ -1457,7 +1456,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "ADC A, (HL)" << std::endl;
 #endif
-		ADC(ram[regs.HL]);
+		ADC(ram.read(regs.HL));
 		cycleWait(8);
 		break;
 	}
@@ -1529,7 +1528,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "SUB (HL)" << std::endl;
 #endif
-		SUB(ram[regs.HL]);
+		SUB(ram.read(regs.HL));
 		cycleWait(8);
 		break;
 	}
@@ -1601,7 +1600,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "SBC (HL)" << std::endl;
 #endif
-		SBC(ram[regs.HL]);
+		SBC(ram.read(regs.HL));
 		cycleWait(8);
 		break;
 	}
@@ -1673,7 +1672,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "AND (HL)" << std::endl;
 #endif
-		AND(ram[regs.HL]);
+		AND(ram.read(regs.HL));
 		cycleWait(8);
 		break;
 	}
@@ -1745,7 +1744,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "XOR (HL)" << std::endl;
 #endif
-		XOR(ram[regs.HL]);
+		XOR(ram.read(regs.HL));
 		cycleWait(8);
 		break;
 	}
@@ -1817,7 +1816,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "OR (HL)" << std::endl;
 #endif
-		OR(ram[regs.HL]);
+		OR(ram.read(regs.HL));
 		cycleWait(8);
 		break;
 	}
@@ -1889,7 +1888,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "CP (HL)" << std::endl;
 #endif
-		CP(ram[regs.HL]);
+		CP(ram.read(regs.HL));
 		cycleWait(8);
 		break;
 	}
@@ -2301,7 +2300,7 @@ void CPU::step()
 		std::cout << hex<uint8_t>(nextVal) << " LD (" << hex<uint16_t>(value) << "), A" << std::endl;
 #endif
 		cycleWait(4);
-		ram[value] = regs.A;
+		ram.writeB(value, regs.A);
 		break;
 	}
 	case 0xE1: // POP HL
@@ -2320,7 +2319,7 @@ void CPU::step()
 		std::cout << "LD (C), A" << std::endl;
 #endif
 		uint16_t address = 0xFF00 + regs.C;
-		ram[address] = regs.A;
+		ram.writeB(address, regs.A);
 		cycleWait(8);
 		break;
 	}
@@ -2381,7 +2380,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << hex<uint16_t>(address) << " LD (" << hex<uint16_t>(address) << "), A" << std::endl;
 #endif
-		ram[address] = regs.A;
+		ram.writeB(address, regs.A);
 		cycleWait(16);
 		break;
 	}
@@ -2414,7 +2413,7 @@ void CPU::step()
 		std::cout << hex<uint8_t>(nextVal) << " LD A, (" << hex<uint16_t>(value) << ")" << std::endl;
 #endif
 		cycleWait(4);
-		regs.A = ram[value];
+		regs.A = ram.read(value);
 		break;
 	}
 	case 0xF1: // POP AF
@@ -2433,7 +2432,7 @@ void CPU::step()
 		std::cout << "LD A, (C)" << std::endl;
 #endif
 		uint16_t address = 0xFF00 + regs.C;
-		regs.A = ram[address];
+		regs.A = ram.read(address);
 		cycleWait(8);
 		break;
 	}
@@ -2503,7 +2502,7 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << hex<uint16_t>(address) << " LD A, (" << hex<uint16_t>(address) << ")" << std::endl;
 #endif
-		uint8_t value = ram[address];
+		uint8_t value = ram.read(address);
 		regs.A = value;
 		cycleWait(16);
 		break;

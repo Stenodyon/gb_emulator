@@ -31,10 +31,10 @@
 	case VAL: \
 	{ \
 		_DEBUG_OUT(std::cout << #o << " (HL)" << std::endl;) \
-		uint8_t value = ram[regs.HL]; \
+		uint8_t value = ram.read(regs.HL); \
 		o(value); \
 		cycleWait(16); \
-		ram[regs.HL] = value; \
+		ram.writeB(regs.HL, value); \
 		break; \
 	}
 
