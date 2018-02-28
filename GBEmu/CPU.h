@@ -94,6 +94,8 @@ private:
 public:
 	CPU(uint8_t * program_data, size_t size) : ram(program_data, size, this) , display(ram), timer(this)
 	{
+		jump(0x0000);
+#if 0
 		jump(0x100); // Entry point is 0x100
 
 		regs.AF = 0x01B0;
@@ -133,6 +135,7 @@ public:
 		ram[0xFF4A] = (uint8_t)0x00;
 		ram[0xFF4B] = (uint8_t)0x00;
 		ram[0xFFFF] = (uint8_t)0x00;
+#endif
 
 		std::cout << "CPU initialized" << std::endl;
 	}
@@ -141,6 +144,7 @@ public:
 
 	void cycleWait(uint64_t cycleCount)
 	{
+		assert(cycleCount % 4 == 0);
 		timer.OnMachineCycle(cycleCount / 4);
 		display.OnMachineCycle(cycleCount / 4);
 		this->cycleCount += cycleCount;
@@ -184,12 +188,17 @@ public:
 		cycleWait(4);
 		ram[regs.SP] = ptr[0];
 		cycleWait(4);
-		ram[regs.SP+1] = ptr[1];
+		ram[regs.SP + 1] = ptr[1];
 	}
 
 	uint16_t pop()
 	{
-		uint16_t value = ram[regs.SP];
+		uint16_t value;
+		uint8_t * ptr = (uint8_t*)&value;
+		cycleWait(4);
+		ptr[0] = ram[regs.SP];
+		cycleWait(4);
+		ptr[1] = ram[regs.SP + 1];
 		regs.SP += 2;
 		return value;
 	}
@@ -275,9 +284,15 @@ public:
 
 	void BIT(uint8_t bit, uint8_t value)
 	{
+#ifdef _DEBUG
+		std::cout << "  -> Value = " << hex<uint8_t>(value);
+#endif
 		regs.Zf = !(value & (0x1 << bit));
 		regs.Nf = 0;
 		regs.Hf = 1;
+#ifdef _DEBUG
+		std::cout << ", Result = " << +(regs.Zf) << std::endl;
+#endif
 	}
 
 	void RES(uint8_t bit, uint8_t & value)
@@ -726,7 +741,13 @@ public:
 			speed_switch = value;
 			break;
 		}
-		case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E: case 0x7F:
+		case 0x50: // DMG ROM disable
+		{
+			std::cout << "Startup A value : " << hex<uint8_t>(regs.A) << std::endl;
+			ram.bootstrap = false;
+			break;
+		}
+		case 0x76: case 0x77: case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E: case 0x7F:
 		{
 			break;
 		}

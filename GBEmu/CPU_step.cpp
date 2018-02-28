@@ -257,8 +257,8 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << hex<uint8_t>(value) << " LD D, " << +value << std::endl;
 #endif
-		regs.D = value;
 		cycleWait(8);
+		regs.D = value;
 		break;
 	}
 	case 0x17: // RLA
@@ -311,8 +311,8 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "DEC DE" << std::endl;
 #endif
-		regs.DE--;
 		cycleWait(8);
+		regs.DE--;
 		break;
 	}
 	case 0x1C: // INC E
@@ -362,18 +362,16 @@ void CPU::step()
 	case 0x20: // JR NZ, r8
 	{
 		//regs.dump();
+		cycleWait(4);
 		uint8_t jump = nextB();
 #ifdef _DEBUG
 		std::cout << hex<uint8_t>(jump) << " JR NZ, " << +(int8_t)jump << std::endl;
 #endif
+		cycleWait(4);
 		if (!regs.Zf)
 		{
+			cycleWait(4);
 			jumpRelative(jump);
-			cycleWait(12);
-		}
-		else
-		{
-			cycleWait(8);
 		}
 		break;
 	}
@@ -593,7 +591,7 @@ void CPU::step()
 	case 0x32: // LD (HL-), A
 	{
 #ifdef _DEBUG
-		std::cout << "LD (HL-), A" << std::endl;
+		std::cout << "LD (" << hex<uint16_t>(regs.HL) << "), A; HL--" << std::endl;
 #endif
 		ram[regs.HL] = regs.A;
 		regs.HL--;
@@ -1034,8 +1032,8 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD E, A" << std::endl;
 #endif
-		regs.E = regs.A;
 		cycleWait(4);
+		regs.E = regs.A;
 		break;
 	}
 	case 0x60: // LD H, B
@@ -1287,8 +1285,8 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "LD A, E" << std::endl;
 #endif
-		regs.A = regs.E;
 		cycleWait(4);
+		regs.A = regs.E;
 		break;
 	}
 	case 0x7C: // LD A, H
@@ -1396,8 +1394,8 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "ADD A, A" << std::endl;
 #endif
-		ADD(regs.A);
 		cycleWait(4);
+		ADD(regs.A);
 		break;
 	}
 	case 0x88: // ADC A, B
@@ -1756,8 +1754,8 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "XOR A" << std::endl;
 #endif
-		XOR(regs.A);
 		cycleWait(4);
+		XOR(regs.A);
 		break;
 	}
 	case 0xB0: // OR B
@@ -1828,8 +1826,8 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "OR A" << std::endl;
 #endif
-		OR(regs.A);
 		cycleWait(4);
+		OR(regs.A);
 		break;
 	}
 	case 0xB8: // CP B
@@ -1911,9 +1909,10 @@ void CPU::step()
 #endif
 		if (!regs.Zf)
 		{
-			cycleWait(20);
+			cycleWait(8);
 			uint16_t returnAddress = pop();
 			jump(returnAddress);
+			cycleWait(4);
 		}
 		else
 		{
@@ -1926,9 +1925,9 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "POP BC" << std::endl;
 #endif
+		cycleWait(4);
 		uint16_t value = pop();
 		regs.BC = value;
-		cycleWait(12);
 		break;
 	}
 	case 0xC2: // JP NZ, a16
@@ -2017,9 +2016,10 @@ void CPU::step()
 #endif
 		if (regs.Zf)
 		{
-			cycleWait(20);
+			cycleWait(8);
 			uint16_t returnAddress = pop();
 			jump(returnAddress);
+			cycleWait(4);
 		}
 		else
 		{
@@ -2034,7 +2034,7 @@ void CPU::step()
 #endif
 		uint16_t returnAddress = pop();
 		jump(returnAddress);
-		cycleWait(16);
+		cycleWait(12);
 		break;
 	}
 	case 0xCA: // JP Z, a16
@@ -2072,7 +2072,6 @@ void CPU::step()
 			uint16_t returnAddress = regs.PC;
 			push(returnAddress);
 			jump(jumpAddress);
-			cycleWait(24);
 		}
 		else
 		{
@@ -2082,11 +2081,12 @@ void CPU::step()
 	}
 	case 0xCD: // CALL a16
 	{
+		cycleWait(12);
 		uint16_t jumpAddress = nextW();
 #ifdef _DEBUG
 		std::cout << hex<uint16_t>(jumpAddress) << " CALL " << hex<uint16_t>(jumpAddress) << std::endl;
 #endif
-		cycleWait(16);
+		cycleWait(4);
 		uint16_t returnAddress = regs.PC;
 		push(returnAddress);
 		jump(jumpAddress);
@@ -2139,8 +2139,8 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "POP DE" << std::endl;
 #endif
+		cycleWait(4);
 		regs.DE = pop();
-		cycleWait(12);
 		break;
 	}
 	case 0xD2: // JP NC, a16
@@ -2194,8 +2194,8 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << hex<uint8_t>(value) << " SUB " << +value << std::endl;
 #endif
-		SUB(value);
 		cycleWait(8);
+		SUB(value);
 		break;
 	}
 	case 0xD7: // RST 0x10
@@ -2294,12 +2294,13 @@ void CPU::step()
 	}
 	case 0xE0: // LDH (a8), A
 	{
+		cycleWait(8);
 		uint8_t nextVal = nextB();
 		uint16_t value = 0xFF00 + nextVal;
 #ifdef _DEBUG
 		std::cout << hex<uint8_t>(nextVal) << " LD (" << hex<uint16_t>(value) << "), A" << std::endl;
 #endif
-		cycleWait(12);
+		cycleWait(4);
 		ram[value] = regs.A;
 		break;
 	}
@@ -2308,9 +2309,9 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "POP HL" << std::endl;
 #endif
+		cycleWait(4);
 		uint16_t value = pop();
 		regs.HL = value;
-		cycleWait(12);
 		break;
 	}
 	case 0xE2: // LD (C), A
@@ -2406,12 +2407,13 @@ void CPU::step()
 	}
 	case 0xF0: // LDH A, (a8)
 	{
+		cycleWait(8);
 		uint8_t nextVal = nextB();
 		uint16_t value = 0xFF00 + nextVal;
 #ifdef _DEBUG
 		std::cout << hex<uint8_t>(nextVal) << " LD A, (" << hex<uint16_t>(value) << ")" << std::endl;
 #endif
-		cycleWait(12);
+		cycleWait(4);
 		regs.A = ram[value];
 		break;
 	}
@@ -2420,9 +2422,9 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << "POP AF" << std::endl;
 #endif
+		cycleWait(4);
 		uint16_t value = pop();
 		regs.AF = value & 0xFFF0; // Lower nibble of F is always 0
-		cycleWait(12);
 		break;
 	}
 	case 0xF2: // LD A, (C)
@@ -2459,8 +2461,8 @@ void CPU::step()
 #ifdef _DEBUG
 		std::cout << hex<uint8_t>(value) << " OR " << hex<uint8_t>(value) << std::endl;
 #endif
-		OR(value);
 		cycleWait(8);
+		OR(value);
 		break;
 	}
 	case 0xF7: // RST 0x30

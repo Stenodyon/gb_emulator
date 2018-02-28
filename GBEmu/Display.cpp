@@ -51,12 +51,30 @@ void Display::incrementFrameCycles()
 	else
 	{
 		uint64_t progress = frameCycles % 456;
+		static bool last_win_enable = win_display_enable;
+		if (win_display_enable & !last_win_enable)
+			std::cout << "Window on, on row " << +progress << std::endl;
+		if (!win_display_enable && last_win_enable)
+			std::cout << "Window off, on row " << +progress << std::endl;
+		last_win_enable = win_display_enable;
 
-		if (progress == 0 && status.oam_int)
-			ram.cpu->interrupt(0x48);
-		else if (progress == 204) // HBLANK
+		if (progress >= 80 && progress < 252)
 		{
-			drawLine(ly);
+			static uint8_t last_column = 0;
+			uint8_t current_column = (uint8_t)(((progress - 80) * 160) / 172);
+			drawLine(ly, last_column, current_column + 1);
+			last_column = current_column + 1;
+		}
+
+		if (progress == 0) // new line
+		{
+			if (status.oam_int)
+				ram.cpu->interrupt(0x48);
+		}
+
+		else if (progress == 252) // HBLANK
+		{
+			//drawLine(ly, 0, 160);
 			if (status.hblank_int)
 				ram.cpu->interrupt(0x48);
 		}
@@ -186,7 +204,7 @@ uint8_t Display::getSpriteColor(sprite * sprite, uint8_t x, uint8_t y)
 	}
 }
 
-void Display::drawLine(uint8_t line)
+void Display::drawLine(uint8_t line, uint8_t from, uint8_t to)
 {
 	sprite * visible_sprites[10];
 	uint8_t visible_count = 0;
@@ -194,7 +212,7 @@ void Display::drawLine(uint8_t line)
 	{
 		getVisibleSprites(line, visible_sprites, visible_count);
 	}
-	for (uint8_t x = 0; x < 160; x++)
+	for (uint8_t x = from; x < to; x++)
 	{
 		if (win_display_enable && line >= winPosY && (x >= (winPosX - 7)))
 		{

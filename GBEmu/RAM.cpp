@@ -10,6 +10,8 @@ RAM::cell_assignment& RAM::cell_assignment::operator=(uint8_t value)
 }
 
 RAM::cell_assignment::operator uint8_t() const {
+	if (ram.bootstrap && address < 0x0100)
+		return BOOTSTRAP[address];
 	if (address >= 0xA000 && address <= 0xBFFF && !ram.ramEnabled)
 		return 0;
 	if ((address >= 0xFF00 && address <= 0xFF7F) || address == 0xFFFF)

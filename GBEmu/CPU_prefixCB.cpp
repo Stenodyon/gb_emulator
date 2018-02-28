@@ -22,8 +22,8 @@
 	case VAL: \
 	{ \
 		_DEBUG_OUT(std::cout << #o << " " << #REG << std::endl;) \
-		o(regs.REG); \
 		cycleWait(8); \
+		o(regs.REG); \
 		break; \
 	}
 
@@ -33,8 +33,8 @@
 		_DEBUG_OUT(std::cout << #o << " (HL)" << std::endl;) \
 		uint8_t value = ram[regs.HL]; \
 		o(value); \
-		ram[regs.HL] = value; \
 		cycleWait(16); \
+		ram[regs.HL] = value; \
 		break; \
 	}
 

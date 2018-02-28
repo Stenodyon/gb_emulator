@@ -115,7 +115,7 @@ private:
 	tile * getSpriteTile(uint8_t index);
 	tile * getTile(uint8_t index);
 	void getVisibleSprites(uint8_t line, sprite * buffer[], uint8_t &count);
-	void drawLine(uint8_t line);
+	void drawLine(uint8_t line, uint8_t from, uint8_t to);
 
 	//TODO: Implement the Window
 	
