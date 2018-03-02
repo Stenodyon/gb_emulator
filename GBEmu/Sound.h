@@ -1,4 +1,138 @@
 #pragma once
+
+class Sound;
+
+class channel1
+{
+private:
+    Sound * sound;
+
+    uint8_t sweep_counter;
+    uint16_t sweep_frequency;
+    uint8_t duty_cycle;
+    uint8_t envelope_counter;
+    uint8_t envelope_volume;
+
+    void check_overflow();
+
+public:
+    channel1() : sound(nullptr) { assert(false); }
+    channel1(Sound * sound);
+
+    void on_trigger();
+
+    void on_sweep_clock();
+    void on_length_clock();
+    void on_envelope_clock();
+
+    void on_frequency_clock();
+    uint64_t get_period();
+
+    uint8_t get_sample();
+};
+
+class channel2
+{
+private:
+    Sound * sound;
+
+    uint8_t duty_cycle;
+    uint8_t envelope_counter;
+    uint8_t envelope_volume;
+
+public:
+    channel2() : sound(nullptr) { assert(false); }
+    channel2(Sound * sound);
+
+    void on_trigger();
+
+    void on_sweep_clock() {}
+    void on_length_clock();
+    void on_envelope_clock();
+
+    void on_frequency_clock();
+    uint64_t get_period();
+
+    uint8_t get_sample();
+};
+
+class channel3
+{
+private:
+    Sound * sound;
+
+    uint16_t sample_index = 0;
+public:
+    channel3() : sound(nullptr) { assert(false); }
+    channel3(Sound * sound);
+
+    void on_trigger();
+
+    void on_sweep_clock() {}
+    void on_length_clock();
+    void on_envelope_clock() {}
+
+    void on_frequency_clock();
+    uint64_t get_period();
+
+    uint8_t get_sample();
+};
+
+template <typename ChanType>
+class Channel : public ChanType
+{
+private:
+	ChanType chan;
+
+	uint64_t cycle_counter;
+	uint64_t frequency_timer;
+	uint8_t frame_sequencer;
+
+	void on_frame_clock()
+    {
+        frame_sequencer = (frame_sequencer + 1) & 0x07; // Counts from 0 to 7
+        if (frame_sequencer % 2 == 0)
+            chan.on_length_clock();
+        if (frame_sequencer % 4 == 2)
+            chan.on_sweep_clock();
+        if (frame_sequencer == 7)
+            chan.on_envelope_clock();
+    }
+
+public:
+    Channel(Sound * sound) : chan(sound) {}
+
+    void on_cycle()
+    {
+        cycle_counter++;
+        if (cycle_counter == 8192)
+        {
+            cycle_counter = 0;
+            on_frame_clock();
+        }
+        frequency_timer--;
+        if (frequency_timer == 0)
+        {
+            chan.on_frequency_clock();
+            frequency_timer = chan.get_period();
+        }
+    }
+
+    void on_trigger()
+    {
+        chan.on_trigger();
+        frequency_timer = chan.get_period();
+    }
+
+    uint8_t get_sample() {
+        return chan.get_sample();
+    }
+};
+
+#define WRITE_BUF_SIZE 1024
+#define BUF_COUNT 4
+#define SOUND_BUF_SIZE BUF_COUNT * WRITE_BUF_SIZE
+
 class Sound
 {
 private:
@@ -42,7 +176,7 @@ private:
 		}
 		operator uint8_t() const
 		{
-			return this->value;
+			return this->value & 0xC0;
 		}
 	};
 	static_assert(sizeof(_wave_duty) == 1, "Wave pattern duty register not 1 byte");
@@ -53,7 +187,7 @@ private:
 			uint8_t value;
 #pragma pack(push, 1)
 			struct {
-				uint8_t sweep_count : 3;
+				uint8_t length : 3;
 				uint8_t direction : 1;
 				uint8_t initial_volume : 4;
 			};
@@ -206,14 +340,31 @@ private:
 
 		_master_control& operator=(uint8_t value)
 		{
-			this->value = value & 0x80; return *this;
+			this->value = (value & 0x80) | (this->value & 0x0F); return *this;
 		}
 		operator uint8_t() const
 		{
-			return this->value;
+			return this->value & 0x8F;
 		}
 	};
 	static_assert(sizeof(_master_control) == 1, "Master control struct is not 1 byte");
+
+	SDL_AudioDeviceID audio_device;
+	uint8_t sound_buffer[SOUND_BUF_SIZE];
+    uint64_t read_ptr = 0;
+    uint64_t write_ptr = 0;
+	uint64_t write_index = 0;
+    SDL_semaphore * free_buffs;
+	friend void audio_callback(void * _sound, Uint8 * stream, int length);
+
+    double elapsed_cycle = 0;
+	uint64_t frame_cycles = 0;
+	void clockFrameCounter();
+	uint8_t frame_counter = 0;
+	uint_fast8_t cycleCount = 0;
+	uint8_t sample_audio();
+    void audio_callback_(uint8_t * stream, int length);
+
 public:
 	_sweep_register c1_sweep;
 	_wave_duty c1_duty, c2_duty;
@@ -228,6 +379,14 @@ public:
 	_sound_output sound_output;
 	_master_control master_control;
 
-	Sound() {}
+    Channel<channel1> chan1;
+    Channel<channel2> chan2;
+    Channel<channel3> chan3;
+
+	Sound() : chan1(this), chan2(this), chan3(this) {}
+
+	void OnMachineCycle(uint64_t cycles);
+	void init();
+	void write_sample(uint8_t sample);
 };
 

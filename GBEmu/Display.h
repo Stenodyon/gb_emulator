@@ -179,7 +179,7 @@ public:
 		{
 			std::cerr << "Could not allocate pixel buffer" << std::endl;
 		}
-		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) != 0)
+		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_AUDIO) != 0)
 		{
 			throw std::runtime_error("SDL: " + std::string(SDL_GetError()));
 		}

@@ -46,6 +46,7 @@ public:
 	Serial serial;
 	Timer timer;
 	Sound sound;
+
 private:
 	bool interruptsEnabled = true;
 	bool halted = false;
@@ -94,6 +95,7 @@ private:
 public:
 	CPU(Cartridge * cart) : ram(cart, this) , display(this), timer(this)
 	{
+		sound.init();
 		jump(0x0000);
 #if 0
 		jump(0x100); // Entry point is 0x100
@@ -145,8 +147,12 @@ public:
 	void cycleWait(uint64_t cycleCount)
 	{
 		assert(cycleCount % 4 == 0);
-		timer.OnMachineCycle(cycleCount / 4);
-		display.OnMachineCycle(cycleCount / 4);
+        for (uint64_t cycle = 0; cycle < cycleCount / 4; cycle++)
+        {
+            timer.OnMachineCycle(1);
+            display.OnMachineCycle(1);
+            sound.OnMachineCycle(1);
+        }
 		this->cycleCount += cycleCount;
 	}
 
@@ -811,7 +817,8 @@ public:
 		case 0x16: // Sound - Channel 2 Sound length
 			return sound.c2_duty;
 		case 0x18: // Sound - Channel 2 Frequency Low
-			return sound.c2_frequency.lower;
+			return 0; // Write only
+			//return sound.c2_frequency.lower;
 		case 0x19: // Sound - Channel 2 Frequency High
 			return sound.c2_frequency.upper;
 		case 0x1E: // Sound - Channel 3 Frequency High

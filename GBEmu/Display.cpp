@@ -39,6 +39,16 @@ void Display::incrementFrameCycles()
 		SDL_RenderCopy(renderer, win_texture, NULL, NULL);
 		SDL_RenderPresent(renderer);
 
+#if 0
+        static uint64_t ticks = SDL_GetPerformanceCounter();
+        uint64_t cur_ticks = SDL_GetPerformanceCounter();
+        uint32_t delay = (uint32_t)std::min((double)(cur_ticks - ticks) / SDL_GetPerformanceFrequency(), 1000. / 60);
+        SDL_Delay((1000 / 60) - delay);
+        ticks = cur_ticks;
+#endif
+        update();
+        cpu->updateInput();
+
 		cpu->interrupt(0x40);
 		if (status.vblank_int)
 			cpu->interrupt(0x48);
@@ -51,12 +61,6 @@ void Display::incrementFrameCycles()
 	else
 	{
 		uint64_t progress = frameCycles % 456;
-		static bool last_win_enable = win_display_enable;
-		if (win_display_enable & !last_win_enable)
-			std::cout << "Window on, on row " << +progress << std::endl;
-		if (!win_display_enable && last_win_enable)
-			std::cout << "Window off, on row " << +progress << std::endl;
-		last_win_enable = win_display_enable;
 
 #if 0
 		if (progress >= 80 && progress < 252)
@@ -221,7 +225,6 @@ uint8_t Display::getSpriteColor(sprite * sprite, uint8_t x, uint8_t y)
 			relY = 15 - relY;
 		uint8_t char_code = relY < 8 ? sprite->chr_code & ~0x01 : sprite->chr_code | 0x01;
 		tile * _tile = getSpriteTile(char_code);
-		palette * palette = sprite->palette ? &obj_palette1 : &obj_palette0;
 		uint8_t colorCode = (*_tile)[relX + 8 * (relY % 8)];
 		return colorCode;
 	}
