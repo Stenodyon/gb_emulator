@@ -263,7 +263,7 @@ __pycache__/
 *.gb
 *.url
 bgb/
-roms/
+resources/
 *.pdf
 convert.py
 *.zip

@@ -95,58 +95,48 @@ private:
 	_speed_switch speed_switch;
 
 public:
-    CPU(Cartridge * cart, bool bootstrap = true) : ram(cart, this), display(this), timer(this)
+    CPU(Cartridge * cart) : ram(cart, this), display(this), timer(this)
     {
         sound.init();
-        if (bootstrap)
-        {
-            jump(0x0000);
-        }
-#if 1
-        else
-        {
-            ram.bootstrap = false;
-            jump(0x100); // Entry point is 0x100
+        jump(0x100); // Entry point is 0x100
 
-            regs.AF = 0x01B0;
-            regs.BC = 0x0013;
-            regs.DE = 0x00D8;
-            regs.HL = 0x014D;
-            regs.SP = 0xFFFE;
+        regs.AF = 0x01B0;
+        regs.BC = 0x0013;
+        regs.DE = 0x00D8;
+        regs.HL = 0x014D;
+        regs.SP = 0xFFFE;
 
-            ram.writeB(0xFF05, 0x00);
-            ram.writeB(0xFF06, 0x00);
-            ram.writeB(0xFF07, 0x00);
-            ram.writeB(0xFF10, 0x80);
-            ram.writeB(0xFF11, 0xBF);
-            ram.writeB(0xFF12, 0xF3);
-            ram.writeB(0xFF14, 0xBF);
-            ram.writeB(0xFF16, 0x3F);
-            ram.writeB(0xFF17, 0x00);
-            ram.writeB(0xFF19, 0xBF);
-            ram.writeB(0xFF1A, 0x7F);
-            ram.writeB(0xFF1B, 0xFF);
-            ram.writeB(0xFF1C, 0x9F);
-            ram.writeB(0xFF1E, 0xBF);
-            ram.writeB(0xFF20, 0xFF);
-            ram.writeB(0xFF21, 0x00);
-            ram.writeB(0xFF22, 0x00);
-            ram.writeB(0xFF23, 0xBF);
-            ram.writeB(0xFF24, 0x77);
-            ram.writeB(0xFF25, 0xF3);
-            ram.writeB(0xFF26, 0xF1);
-            ram.writeB(0xFF40, 0x91);
-            ram.writeB(0xFF42, 0x00);
-            ram.writeB(0xFF43, 0x00);
-            ram.writeB(0xFF45, 0x00);
-            ram.writeB(0xFF47, 0xFC);
-            ram.writeB(0xFF48, 0xFF);
-            ram.writeB(0xFF49, 0xFF);
-            ram.writeB(0xFF4A, 0x00);
-            ram.writeB(0xFF4B, 0x00);
-            ram.writeB(0xFFFF, 0x00);
-        }
-#endif
+        ram.writeB(0xFF05, 0x00);
+        ram.writeB(0xFF06, 0x00);
+        ram.writeB(0xFF07, 0x00);
+        ram.writeB(0xFF10, 0x80);
+        ram.writeB(0xFF11, 0xBF);
+        ram.writeB(0xFF12, 0xF3);
+        ram.writeB(0xFF14, 0xBF);
+        ram.writeB(0xFF16, 0x3F);
+        ram.writeB(0xFF17, 0x00);
+        ram.writeB(0xFF19, 0xBF);
+        ram.writeB(0xFF1A, 0x7F);
+        ram.writeB(0xFF1B, 0xFF);
+        ram.writeB(0xFF1C, 0x9F);
+        ram.writeB(0xFF1E, 0xBF);
+        ram.writeB(0xFF20, 0xFF);
+        ram.writeB(0xFF21, 0x00);
+        ram.writeB(0xFF22, 0x00);
+        ram.writeB(0xFF23, 0xBF);
+        ram.writeB(0xFF24, 0x77);
+        ram.writeB(0xFF25, 0xF3);
+        ram.writeB(0xFF26, 0xF1);
+        ram.writeB(0xFF40, 0x91);
+        ram.writeB(0xFF42, 0x00);
+        ram.writeB(0xFF43, 0x00);
+        ram.writeB(0xFF45, 0x00);
+        ram.writeB(0xFF47, 0xFC);
+        ram.writeB(0xFF48, 0xFF);
+        ram.writeB(0xFF49, 0xFF);
+        ram.writeB(0xFF4A, 0x00);
+        ram.writeB(0xFF4B, 0x00);
+        ram.writeB(0xFFFF, 0x00);
 
 		std::cout << "CPU initialized" << std::endl;
 	}
@@ -771,8 +761,8 @@ public:
 		}
 		case 0x50: // DMG ROM disable
 		{
-			std::cout << "Startup A value : " << hex<uint8_t>(regs.A) << std::endl;
-			ram.bootstrap = false;
+			//std::cout << "Startup A value : " << hex<uint8_t>(regs.A) << std::endl;
+			//ram.bootstrap = false;
 			break;
 		}
 		case 0x76: case 0x77: case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E: case 0x7F:

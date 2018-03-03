@@ -9,8 +9,6 @@ RAM::RAM(Cartridge * cart, CPU * cpu)
 
 uint8_t RAM::read(uint16_t address)
 {
-	if (address < 0x100 && bootstrap)
-		return BOOTSTRAP[address];
 	if (address < 0x4000) // ROM Bank 00
 		return cart->read(0, address);
 	if (address < 0x8000) // Switchable ROM Bank
