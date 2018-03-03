@@ -18,14 +18,14 @@
 
 std::ifstream::pos_type file_size(const std::string& filename)
 {
-	std::streampos fsize = 0;
+    std::streampos fsize = 0;
     std::ifstream file(filename, std::ios::binary);
 
-	if (!file)
-	{
-		std::cerr << "File '" << filename << "' does not exist" << std::endl;
-		exit(-1);
-	}
+    if (!file)
+    {
+        std::cerr << "File '" << filename << "' does not exist" << std::endl;
+        exit(-1);
+    }
 
     fsize = file.tellg();
     file.seekg(0, std::ios::end);

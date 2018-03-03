@@ -79,52 +79,52 @@
 
 void CPU::prefixCB()
 {
-	uint16_t currentPointer = regs.PC;
-	uint8_t instr = nextB();
+    uint16_t currentPointer = regs.PC;
+    uint8_t instr = nextB();
 #ifdef _DEBUG
-	std::cout << hex<uint8_t>(instr) << " ";
+    std::cout << hex<uint8_t>(instr) << " ";
 #endif
-	switch (instr)
-	{
-		_APPLY(0x00, RLC)
-		_APPLY(0x08, RRC)
-		_APPLY(0x10, RL)
-		_APPLY(0x18, RR)
-		_APPLY(0x20, SLA)
-		_APPLY(0x28, SRA)
-		_APPLY(0x30, SWAP)
-		_APPLY(0x38, SRL)
-		_APPLY(0x40, BIT0)
-		_APPLY(0x48, BIT1)
-		_APPLY(0x50, BIT2)
-		_APPLY(0x58, BIT3)
-		_APPLY(0x60, BIT4)
-		_APPLY(0x68, BIT5)
-		_APPLY(0x70, BIT6)
-		_APPLY(0x78, BIT7)
-		_APPLY(0x80, RES0)
-		_APPLY(0x88, RES1)
-		_APPLY(0x90, RES2)
-		_APPLY(0x98, RES3)
-		_APPLY(0xA0, RES4)
-		_APPLY(0xA8, RES5)
-		_APPLY(0xB0, RES6)
-		_APPLY(0xB8, RES7)
-		_APPLY(0xC0, SET0)
-		_APPLY(0xC8, SET1)
-		_APPLY(0xD0, SET2)
-		_APPLY(0xD8, SET3)
-		_APPLY(0xE0, SET4)
-		_APPLY(0xE8, SET5)
-		_APPLY(0xF0, SET6)
-		_APPLY(0xF8, SET7)
-	default:
-	{
-		std::cerr << "ERR: 0xCB " << hex<uint8_t>(instr) << std::endl;
-		std::ostringstream sstream;
-		sstream << "0xCB 0x" << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << +instr << std::nouppercase;
-		sstream << " at address 0x" << std::uppercase << std::setfill('0') << std::setw(4) << std::hex << +currentPointer;
-		throw OpcodeNotImplemented(sstream.str());
-	}
-	}
+    switch (instr)
+    {
+        _APPLY(0x00, RLC)
+            _APPLY(0x08, RRC)
+            _APPLY(0x10, RL)
+            _APPLY(0x18, RR)
+            _APPLY(0x20, SLA)
+            _APPLY(0x28, SRA)
+            _APPLY(0x30, SWAP)
+            _APPLY(0x38, SRL)
+            _APPLY(0x40, BIT0)
+            _APPLY(0x48, BIT1)
+            _APPLY(0x50, BIT2)
+            _APPLY(0x58, BIT3)
+            _APPLY(0x60, BIT4)
+            _APPLY(0x68, BIT5)
+            _APPLY(0x70, BIT6)
+            _APPLY(0x78, BIT7)
+            _APPLY(0x80, RES0)
+            _APPLY(0x88, RES1)
+            _APPLY(0x90, RES2)
+            _APPLY(0x98, RES3)
+            _APPLY(0xA0, RES4)
+            _APPLY(0xA8, RES5)
+            _APPLY(0xB0, RES6)
+            _APPLY(0xB8, RES7)
+            _APPLY(0xC0, SET0)
+            _APPLY(0xC8, SET1)
+            _APPLY(0xD0, SET2)
+            _APPLY(0xD8, SET3)
+            _APPLY(0xE0, SET4)
+            _APPLY(0xE8, SET5)
+            _APPLY(0xF0, SET6)
+            _APPLY(0xF8, SET7)
+    default:
+        {
+            std::cerr << "ERR: 0xCB " << hex<uint8_t>(instr) << std::endl;
+            std::ostringstream sstream;
+            sstream << "0xCB 0x" << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << +instr << std::nouppercase;
+            sstream << " at address 0x" << std::uppercase << std::setfill('0') << std::setw(4) << std::hex << +currentPointer;
+            throw OpcodeNotImplemented(sstream.str());
+        }
+    }
 }

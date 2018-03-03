@@ -44,24 +44,24 @@ namespace // 'unary minus on unsiged will still be unsigned' shenanigans
 template <typename T>
 struct hex
 {
-	T value;
+    T value;
 
-	hex(T value_arg) : value(value_arg) {}
+    hex(T value_arg) : value(value_arg) {}
 };
 
 template <typename T>
 std::ostream & operator<<(std::ostream & out, const hex<T> val)
 {
-	bool negative = val.value < 0;
-	out << (negative ? "-0x" : "0x")
-		<< std::uppercase
-		<< std::setfill('0')
-		<< std::setw(sizeof(T) * 2)
-		<< std::hex
-		<< +abs(val.value)
-		<< std::nouppercase
-		<< std::dec;
-	return out;
+    bool negative = val.value < 0;
+    out << (negative ? "-0x" : "0x")
+        << std::uppercase
+        << std::setfill('0')
+        << std::setw(sizeof(T) * 2)
+        << std::hex
+        << +abs(val.value)
+        << std::nouppercase
+        << std::dec;
+    return out;
 }
 
 template <typename T>

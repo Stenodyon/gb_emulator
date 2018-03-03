@@ -324,7 +324,7 @@ void Disassembler::Head::step()
         LOG("JR r8");
         {
             uint16_t address = current_byte + 2 + (int8_t)(disassembler->cart->rom[current_byte + 1]);
-            if(address < 0x4000) disassembler->get_label(address);
+            if (address < 0x4000) disassembler->get_label(address);
             set_instr(1);
             //disassembler->on_head_finished(this);
             current_byte = address;
@@ -334,7 +334,7 @@ void Disassembler::Head::step()
         LOG("JR NZ, r8")
         {
             uint16_t address = current_byte + 2 + (int8_t)(disassembler->cart->rom[current_byte + 1]);
-            if(address < 0x4000) disassembler->get_label(address);
+            if (address < 0x4000) disassembler->get_label(address);
             set_instr(1);
             disassembler->add_head(address);
         }
@@ -343,7 +343,7 @@ void Disassembler::Head::step()
         LOG("JR Z, r8")
         {
             uint16_t address = current_byte + 2 + (int8_t)(disassembler->cart->rom[current_byte + 1]);
-            if(address < 0x4000) disassembler->get_label(address);
+            if (address < 0x4000) disassembler->get_label(address);
             disassembler->add_head(address);
             set_instr(1);
         }
@@ -352,7 +352,7 @@ void Disassembler::Head::step()
         LOG("JR NC, r8")
         {
             uint16_t address = current_byte + 2 + (int8_t)(disassembler->cart->rom[current_byte + 1]);
-            if(address < 0x4000) disassembler->get_label(address);
+            if (address < 0x4000) disassembler->get_label(address);
             set_instr(1);
             disassembler->add_head(address);
         }
@@ -361,7 +361,7 @@ void Disassembler::Head::step()
         LOG("JR C, r8")
         {
             uint16_t address = current_byte + 2 + (int8_t)(disassembler->cart->rom[current_byte + 1]);
-            if(address < 0x4000) disassembler->get_label(address);
+            if (address < 0x4000) disassembler->get_label(address);
             set_instr(1);
             disassembler->add_head(address);
         }
@@ -374,7 +374,7 @@ void Disassembler::Head::step()
         LOG("JP NZ, a16");
         {
             uint16_t address = *(uint16_t*)(disassembler->cart->rom + current_byte + 1);
-            if(address < 0x4000) disassembler->get_label(address);
+            if (address < 0x4000) disassembler->get_label(address);
             set_instr(2);
             disassembler->add_head(address);
         }
@@ -383,7 +383,7 @@ void Disassembler::Head::step()
         LOG("JP a16");
         {
             uint16_t address = *(uint16_t*)(disassembler->cart->rom + current_byte + 1);
-            if(address < 0x4000) disassembler->get_label(address);
+            if (address < 0x4000) disassembler->get_label(address);
             set_instr(2);
             current_byte = address;
         }
@@ -396,7 +396,7 @@ void Disassembler::Head::step()
         LOG("JP Z, a16");
         {
             uint16_t address = *(uint16_t*)(disassembler->cart->rom + current_byte + 1);
-            if(address < 0x4000) disassembler->get_label(address);
+            if (address < 0x4000) disassembler->get_label(address);
             set_instr(2);
             disassembler->add_head(address);
         }
@@ -416,7 +416,7 @@ void Disassembler::Head::step()
         LOG("CALL a16");
         {
             uint16_t address = *(uint16_t*)(disassembler->cart->rom + current_byte + 1);
-            if(address < 0x4000) disassembler->get_label(address);
+            if (address < 0x4000) disassembler->get_label(address);
             set_instr(2);
             disassembler->add_head(address);
         }
@@ -530,7 +530,7 @@ std::string Disassembler::get_label(uif address)
     // else
 
     std::string name = "loc_" + hex<uif>(address);
-    labels.insert({address, name});
+    labels.insert({ address, name });
     return name;
 }
 
