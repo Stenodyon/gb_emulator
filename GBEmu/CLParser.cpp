@@ -29,5 +29,8 @@ std::string CLParser::get_option(const std::string & option_name)
 
 std::string CLParser::get_last()
 {
-    return *(tokens.rbegin());
+    auto last_iter = tokens.rbegin();
+    if (last_iter == tokens.rend())
+        return "";
+    return *last_iter;
 }
