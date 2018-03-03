@@ -40,7 +40,9 @@ public:
 
         Disassembler * disassembler;
 
-        void set_instr(uint8_t arity);
+        void set_instr(uif address, uint8_t arity);
+        void jump(uif address);
+        void branch(uif address);
 
     public:
         Head(Disassembler * disassembler, uif start_byte)
