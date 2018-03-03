@@ -1,11 +1,12 @@
 #pragma once
 
+#include "stdafx.h"
+
 #include <list>
 #include <map>
 
 #include "Cartridge.h"
-
-#define uif uint_fast16_t
+#include "Hints.h"
 
 enum ByteType
 {
@@ -50,7 +51,7 @@ private:
     std::string get_label(uif address);
 
 public:
-    Disassembler(Cartridge * cart);
+    Disassembler(Cartridge * cart, Hints * hints = nullptr);
     ~Disassembler();
 
     void disassemble();

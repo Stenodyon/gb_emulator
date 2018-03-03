@@ -227,10 +227,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Cartridge.h" />
+    <ClInclude Include="CLParser.h" />
     <ClInclude Include="CPU.h" />
     <ClInclude Include="Disassembler.h" />
     <ClInclude Include="Display.h" />
     <ClInclude Include="hex.h" />
+    <ClInclude Include="Hints.h" />
     <ClInclude Include="Joypad.h" />
     <ClInclude Include="Program.h" />
     <ClInclude Include="RAM.h" />
@@ -244,12 +246,14 @@
   <ItemGroup>
     <ClCompile Include="Cartridge.cpp" />
     <ClCompile Include="Cartridge_tests.cpp" />
+    <ClCompile Include="CLParser.cpp" />
     <ClCompile Include="CPU.cpp" />
     <ClCompile Include="CPU_prefixCB.cpp" />
     <ClCompile Include="CPU_step.cpp" />
     <ClCompile Include="Disassembler.cpp" />
     <ClCompile Include="Display.cpp" />
     <ClCompile Include="GBEmu.cpp" />
+    <ClCompile Include="Hints.cpp" />
     <ClCompile Include="Joypad.cpp" />
     <ClCompile Include="Program.cpp" />
     <ClCompile Include="RAM.cpp" />
@@ -265,6 +269,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Timer.cpp" />
+    <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -57,6 +57,12 @@
     <ClInclude Include="hex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Hints.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CLParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -105,6 +111,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Disassembler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Hints.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CLParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

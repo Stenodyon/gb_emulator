@@ -440,7 +440,7 @@ void Disassembler::Head::step()
     }
 }
 
-Disassembler::Disassembler(Cartridge * cart) : cart(cart) {
+Disassembler::Disassembler(Cartridge * cart, Hints * hints) : cart(cart) {
     byte_type = (ByteType*)malloc(cart->rom_size * sizeof(ByteType));
     if (byte_type == NULL)
     {
@@ -454,6 +454,12 @@ Disassembler::Disassembler(Cartridge * cart) : cart(cart) {
         byte_type[address] = ByteType::Data;
 
     labels.insert({ 0x0100, "entry_point" });
+
+    if (hints != nullptr)
+    {
+        for (auto label : hints->labels)
+            labels.insert({ label.first, label.second });
+    }
 }
 
 Disassembler::~Disassembler() {
