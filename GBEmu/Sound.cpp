@@ -66,9 +66,13 @@ void channel1::on_envelope_clock()
     envelope_counter--;
     if (envelope_counter == 0)
     {
-        int8_t change = sound->c1_envelope.direction ? 0x01 : -0x01;
-        envelope_volume = (envelope_volume + change) & 0x0F;
         envelope_counter = sound->c1_envelope.length;
+
+        int8_t change = sound->c1_envelope.direction ? 0x01 : -0x01;
+        uint8_t new_volume = envelope_volume + change;
+        if (new_volume > 0x0F)
+            return;
+        envelope_volume = new_volume;
     }
 }
 
@@ -142,9 +146,12 @@ void channel2::on_envelope_clock()
     envelope_counter--;
     if (envelope_counter == 0)
     {
-        int8_t change = sound->c2_envelope.direction ? 0x01 : -0x01;
-        envelope_volume = (envelope_volume + change) & 0x0F;
         envelope_counter = sound->c2_envelope.length;
+        int8_t change = sound->c2_envelope.direction ? 0x01 : -0x01;
+        uint8_t new_volume = envelope_volume + change;
+        if (new_volume > 0x0F)
+            return;
+        envelope_volume = new_volume;
     }
 }
 
@@ -421,7 +428,8 @@ uint8_t Sound::sample_audio()
 void Sound::write_sample(uint8_t sample)
 {
 #if 1
-    (sound_buffer + write_ptr)[write_index] = (sample / 2) + 0x80;
+    //(sound_buffer + write_ptr)[write_index] = (sample / 2) + 0x80;
+    (sound_buffer + write_ptr)[write_index] = sample;
     write_index++;
     if (write_index == WRITE_BUF_SIZE)
     {

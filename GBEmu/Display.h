@@ -42,6 +42,8 @@ struct sprite
 		};
 #pragma pack(pop)
 	};
+
+    bool operator<(sprite & other) { return x < other.x; }
 };
 static_assert(sizeof(sprite) == 4, "sprite structure is not 4 bytes");
 

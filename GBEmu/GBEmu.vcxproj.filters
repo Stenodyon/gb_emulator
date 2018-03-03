@@ -51,6 +51,12 @@
     <ClInclude Include="Cartridge.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Disassembler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -96,6 +102,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Cartridge_tests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Disassembler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

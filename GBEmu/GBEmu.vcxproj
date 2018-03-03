@@ -228,7 +228,9 @@
   <ItemGroup>
     <ClInclude Include="Cartridge.h" />
     <ClInclude Include="CPU.h" />
+    <ClInclude Include="Disassembler.h" />
     <ClInclude Include="Display.h" />
+    <ClInclude Include="hex.h" />
     <ClInclude Include="Joypad.h" />
     <ClInclude Include="Program.h" />
     <ClInclude Include="RAM.h" />
@@ -245,6 +247,7 @@
     <ClCompile Include="CPU.cpp" />
     <ClCompile Include="CPU_prefixCB.cpp" />
     <ClCompile Include="CPU_step.cpp" />
+    <ClCompile Include="Disassembler.cpp" />
     <ClCompile Include="Display.cpp" />
     <ClCompile Include="GBEmu.cpp" />
     <ClCompile Include="Joypad.cpp" />

@@ -1,5 +1,7 @@
 #include "stdafx.h"
+
 #include "Cartridge.h"
+#include "hex.h"
 
 const uint16_t HEADER_OFFSET = 0x0100;
 

@@ -39,6 +39,8 @@ public:
 
 	uint8_t unused_regsiter_03;
 	uint8_t unused_regsiter_08;
+    uint8_t unused_register_15;
+    uint8_t unused_register_1F;
 
 	Regs regs;
 	RAM ram;
@@ -93,50 +95,57 @@ private:
 	_speed_switch speed_switch;
 
 public:
-	CPU(Cartridge * cart) : ram(cart, this) , display(this), timer(this)
-	{
-		sound.init();
-		jump(0x0000);
-#if 0
-		jump(0x100); // Entry point is 0x100
+    CPU(Cartridge * cart, bool bootstrap = true) : ram(cart, this), display(this), timer(this)
+    {
+        sound.init();
+        if (bootstrap)
+        {
+            jump(0x0000);
+        }
+#if 1
+        else
+        {
+            ram.bootstrap = false;
+            jump(0x100); // Entry point is 0x100
 
-		regs.AF = 0x01B0;
-		regs.BC = 0x0013;
-		regs.DE = 0x00D8;
-		regs.HL = 0x014D;
-		regs.SP = 0xFFFE;
+            regs.AF = 0x01B0;
+            regs.BC = 0x0013;
+            regs.DE = 0x00D8;
+            regs.HL = 0x014D;
+            regs.SP = 0xFFFE;
 
-		ram[0xFF05] = (uint8_t)0x00;
-		ram[0xFF06] = (uint8_t)0x00;
-		ram[0xFF07] = (uint8_t)0x00;
-		ram[0xFF10] = (uint8_t)0x80;
-		ram[0xFF11] = (uint8_t)0xBF;
-		ram[0xFF12] = (uint8_t)0xF3;
-		ram[0xFF14] = (uint8_t)0xBF;
-		ram[0xFF16] = (uint8_t)0x3F;
-		ram[0xFF17] = (uint8_t)0x00;
-		ram[0xFF19] = (uint8_t)0xBF;
-		ram[0xFF1A] = (uint8_t)0x7F;
-		ram[0xFF1B] = (uint8_t)0xFF;
-		ram[0xFF1C] = (uint8_t)0x9F;
-		ram[0xFF1E] = (uint8_t)0xBF;
-		ram[0xFF20] = (uint8_t)0xFF;
-		ram[0xFF21] = (uint8_t)0x00;
-		ram[0xFF22] = (uint8_t)0x00;
-		ram[0xFF23] = (uint8_t)0xBF;
-		ram[0xFF24] = (uint8_t)0x77;
-		ram[0xFF25] = (uint8_t)0xF3;
-		ram[0xFF26] = (uint8_t)0xF1;
-		ram[0xFF40] = (uint8_t)0x91;
-		ram[0xFF42] = (uint8_t)0x00;
-		ram[0xFF43] = (uint8_t)0x00;
-		ram[0xFF45] = (uint8_t)0x00;
-		ram[0xFF47] = (uint8_t)0xFC;
-		ram[0xFF48] = (uint8_t)0xFF;
-		ram[0xFF49] = (uint8_t)0xFF;
-		ram[0xFF4A] = (uint8_t)0x00;
-		ram[0xFF4B] = (uint8_t)0x00;
-		ram[0xFFFF] = (uint8_t)0x00;
+            ram.writeB(0xFF05, 0x00);
+            ram.writeB(0xFF06, 0x00);
+            ram.writeB(0xFF07, 0x00);
+            ram.writeB(0xFF10, 0x80);
+            ram.writeB(0xFF11, 0xBF);
+            ram.writeB(0xFF12, 0xF3);
+            ram.writeB(0xFF14, 0xBF);
+            ram.writeB(0xFF16, 0x3F);
+            ram.writeB(0xFF17, 0x00);
+            ram.writeB(0xFF19, 0xBF);
+            ram.writeB(0xFF1A, 0x7F);
+            ram.writeB(0xFF1B, 0xFF);
+            ram.writeB(0xFF1C, 0x9F);
+            ram.writeB(0xFF1E, 0xBF);
+            ram.writeB(0xFF20, 0xFF);
+            ram.writeB(0xFF21, 0x00);
+            ram.writeB(0xFF22, 0x00);
+            ram.writeB(0xFF23, 0xBF);
+            ram.writeB(0xFF24, 0x77);
+            ram.writeB(0xFF25, 0xF3);
+            ram.writeB(0xFF26, 0xF1);
+            ram.writeB(0xFF40, 0x91);
+            ram.writeB(0xFF42, 0x00);
+            ram.writeB(0xFF43, 0x00);
+            ram.writeB(0xFF45, 0x00);
+            ram.writeB(0xFF47, 0xFC);
+            ram.writeB(0xFF48, 0xFF);
+            ram.writeB(0xFF49, 0xFF);
+            ram.writeB(0xFF4A, 0x00);
+            ram.writeB(0xFF4B, 0x00);
+            ram.writeB(0xFFFF, 0x00);
+        }
 #endif
 
 		std::cout << "CPU initialized" << std::endl;
@@ -526,6 +535,11 @@ public:
 			sound.c1_frequency.upper = value;
 			break;
 		}
+        case 0x15: // Unused
+        {
+            unused_register_15 = value;
+            break;
+        }
 		case 0x16: // Sound - Channel 2 Sound Length/Wave pattern duty
 		{
 #ifdef _DEBUG
@@ -598,6 +612,11 @@ public:
 			sound.c3_frequency.upper = value;
 			break;
 		}
+        case 0x1F: // Unused
+        {
+            unused_register_1F = value;
+            break;
+        }
 		case 0x20: // Sound - Channel 3 Sound length
 		{
 #ifdef _DEBUG
@@ -811,20 +830,29 @@ public:
 		case 0x0F: // Interrupt flag
 			return int_flag;
 		case 0x11: // Sound - Channel 1 Sound lengh
-			return sound.c1_duty;
+			return sound.c1_duty | 0x3F;
+        case 0x13: // Sound - Channel 1 Frequency Low
+            return 0xFF; // Write only
 		case 0x14: // Sound - Channel 1 Frequency High
-			return sound.c1_frequency.upper;
+			return sound.c1_frequency.upper | 0xBF;
+        case 0x15: // Sound - Unused
+            return 0xFF;
 		case 0x16: // Sound - Channel 2 Sound length
-			return sound.c2_duty;
+			return sound.c2_duty | 0x3F;
 		case 0x18: // Sound - Channel 2 Frequency Low
-			return 0; // Write only
-			//return sound.c2_frequency.lower;
+			return 0xFF; // Write only
 		case 0x19: // Sound - Channel 2 Frequency High
-			return sound.c2_frequency.upper;
-		case 0x1E: // Sound - Channel 3 Frequency High
-			return sound.c3_frequency.upper;
+			return sound.c2_frequency.upper | 0xBF;
+        case 0x1B: // Sound - Channel 3 Length load
+            return 0xFF;
 		case 0x1C: // Sound - Channel 3 Output Level
-			return sound.c3_output_level;
+			return sound.c3_output_level | 0x9F;
+        case 0x1D: // Sound - Channel 3 Frequency Low
+            return 0xFF; // Write only
+        case 0x1E: // Sound - Channel 3 Frequency High
+            return sound.c3_frequency.upper | 0xBF;
+        case 0x1F: // Sound - Unused
+            return 0xFF;
 		case 0x23: // Sound - Channel 4 Counter consecutive
 			return sound.c4_counter;
 		case 0x24: // Sound - Channel control
@@ -832,7 +860,7 @@ public:
 		case 0x25: // Sound - Sound output select
 			return sound.sound_output;
 		case 0x26: // Sound - Master control
-			return sound.master_control;
+			return sound.master_control | 0x70;
 		case 0x40: // Display - LCD Control
 			return display.control;
 		case 0x41: // Display - LCD Status
@@ -843,6 +871,8 @@ public:
 			return display.scrollX;
 		case 0x44: // Display - LY
 			return display.ly;
+        case 0x45: // Display - LY Compare
+            return display.lyc;
 		case 0x47: // Display - Background palette
 			return display.bg_palette;
 		case 0x48: // Display - OBJ Palette 0

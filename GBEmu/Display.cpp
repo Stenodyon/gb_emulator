@@ -165,8 +165,14 @@ uint8_t Display::getWinColorUnderPixel(uint8_t x, uint8_t y)
 	return getWindowColor(x - (winPosX - 7), y - winPosY);
 }
 
+bool sprite_ptr_comp(sprite * a, sprite * b)
+{
+    return *a < *b;
+}
+
 void Display::getVisibleSprites(uint8_t line, sprite * buffer[], uint8_t & count)
 {
+    sprite * visible_sprites[40];
 	count = 0;
 	sprite * oam_base = (sprite*)oam_ram;
 	for (uint8_t index = 0; index < 40; index++)
@@ -177,12 +183,15 @@ void Display::getVisibleSprites(uint8_t line, sprite * buffer[], uint8_t & count
 			&& ((!obj_size && line < spriteY + 8)
 				|| (obj_size && line < spriteY + 16)))
 		{
-			buffer[count] = sprite;
+			//buffer[count] = sprite;
+            visible_sprites[count] = sprite;
 			count++;
-			if (count == 10)
-				break;
+			//if (count == 10) break;
 		}
 	}
+    std::sort<sprite**>(visible_sprites, visible_sprites + count, sprite_ptr_comp);
+    count = std::min(count, (uint8_t)10);
+    std::memcpy(buffer, visible_sprites, count * sizeof(sprite*));
 }
 
 tile * Display::getSpriteTile(uint8_t index)

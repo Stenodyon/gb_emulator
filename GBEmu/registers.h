@@ -5,6 +5,8 @@
 
 #include "stdafx.h"
 
+#include "hex.h"
+
 struct Regs
 {
 	union
