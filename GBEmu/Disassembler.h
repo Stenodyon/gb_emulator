@@ -63,7 +63,9 @@ private:
     std::list<Head*> removed_heads;
 
     std::map<uif, std::string> labels;
-    std::string get_label(uif address);
+    std::string new_label(uif address);
+    std::string get_label(uint64_t address);
+    std::string get_pointed_label(uint64_t address);
 
 public:
     Disassembler(Cartridge * cart, Hints * hints = nullptr);

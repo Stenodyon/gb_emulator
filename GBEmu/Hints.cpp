@@ -40,16 +40,32 @@ Hints Hints::from_file(std::string filename)
         std::vector<std::string> components = split(line, "\\s+");
         if (components.size() == 0)
             continue;
-        if (components[0] == "l")
+        if (components[0] == "l") // Label hints
         {
             if (components.size() != 3)
             {
-                std::cerr << "parse error: " << line << std::endl;
+                std::cerr << "parse error: '" << line << "'" << std::endl;
                 continue;
             }
             uint64_t address = std::stoull(components[1], 0, 0);
             std::string name = components[2];
             hints.labels.push_back({ address, name });
+        }
+        else if (components[0] == "d") // Data range hints
+        {
+            if (components.size() != 3)
+            {
+                std::cerr << "parse error: '" << line << "'" << std::endl;
+                continue;
+            }
+            uint64_t start = std::stoull(components[1], 0, 0);
+            uint64_t end = std::stoull(components[2], 0, 0);
+            hints.data_ranges.push_back({ start, end });
+        }
+        else
+        {
+            std::cerr << "parse error: '" << line << "'" << std::endl;
+            continue;
         }
     }
 

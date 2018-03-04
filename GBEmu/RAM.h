@@ -36,6 +36,8 @@ private:
 public:
     RAM(Cartridge * cart, CPU * cpu);
 
+    uint8_t get_rom_bank() { return rom_bank.value; }
+
     uint8_t read(uint16_t address);
     void writeB(uint16_t address, uint8_t value);
     void writeW(uint16_t address, uint16_t value);

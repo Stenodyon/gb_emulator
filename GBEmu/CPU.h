@@ -190,6 +190,15 @@ public:
 #ifdef _DEBUG
         std::cout << "Jump to " << hex<uint16_t>(address) << std::endl;
 #endif
+#if 0
+        if (regs.PC < 0x4000 && address >= 0x4000 && address < 0x8000)
+        {
+            uint8_t bank = ram.get_rom_bank();
+            std::cout << "Jumping into address " << hex<uint16_t>(address - 0x4000)
+                << " of bank " << hex<uint8_t>(bank)
+                << " (" << hex<uint32_t>(bank * 0x4000 + (address - 0x4000)) << ")" << std::endl;
+        }
+#endif
         regs.PC = address;
     }
 

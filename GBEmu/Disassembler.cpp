@@ -305,13 +305,13 @@ void Disassembler::Head::jump(uif address)
     }
     else if (current_byte >= 0x4000 && address < 0x4000)
     {
-        disassembler->get_label(address);
+        disassembler->new_label(address);
         current_byte = address;
     }
     else
     {
         uif target = (current_byte / 0x4000) * 0x4000 + (address % 0x4000);
-        disassembler->get_label(target);
+        disassembler->new_label(target);
         current_byte = target;
     }
 }
@@ -324,13 +324,13 @@ void Disassembler::Head::branch(uif address)
     }
     else if (current_byte >= 0x4000 && address < 0x4000)
     {
-        disassembler->get_label(address);
+        disassembler->new_label(address);
         disassembler->add_head(address);
     }
     else
     {
         uif target = (current_byte / 0x4000) * 0x4000 + (address % 0x4000);
-        disassembler->get_label(target);
+        disassembler->new_label(target);
         disassembler->add_head(target);
     }
 }
@@ -427,6 +427,15 @@ void Disassembler::Head::step()
             jump(address);
         }
         break;
+    case 0xC4: // CALL NZ, a16
+        LOG("CALL NZ, a16");
+        {
+            uint16_t address = *(uint16_t*)(disassembler->cart->rom + current_byte + 1);
+            set_instr(current_byte, 2);
+            branch(address);
+            current_byte += 3;
+        }
+        break;
     case 0xC8: // RET Z
         LOG("RET Z");
         set_instr(current_byte, 0);
@@ -445,11 +454,21 @@ void Disassembler::Head::step()
         ;
         {
             set_instr(current_byte, 0);
+            current_byte++;
             uint8_t cb_instr = disassembler->cart->rom[current_byte];
             switch (cb_instr)
             {
                 SWITCH_CB(INSTR)
             }
+        }
+        break;
+    case 0xCC: // CALL Z, a16
+        LOG("CALL Z, a16");
+        {
+            uint16_t address = *(uint16_t*)(disassembler->cart->rom + current_byte + 1);
+            set_instr(current_byte, 2);
+            branch(address);
+            current_byte += 3;
         }
         break;
     case 0xCD: // CALL a16
@@ -466,10 +485,47 @@ void Disassembler::Head::step()
         set_instr(current_byte, 0);
         disassembler->on_head_finished(this);
         break;
+    case 0xD0: // RET NC
+        LOG("RET NC");
+        set_instr(current_byte, 0);
+        current_byte++;
+        break;
+    case 0xD2: // JP NC, a16
+        LOG("JP NC, a16");
+        {
+            uint16_t address = *(uint16_t*)(disassembler->cart->rom + current_byte + 1);
+            set_instr(current_byte, 2);
+            branch(address);
+            current_byte += 3;
+        }
+        break;
+    case 0xD4: // CALL NC, a16
+        LOG("CALL NC, a16");
+        {
+            uint16_t address = *(uint16_t*)(disassembler->cart->rom + current_byte + 1);
+            set_instr(current_byte, 2);
+            branch(address);
+            current_byte += 3;
+        }
+        break;
+    case 0xD8: // RET C
+        LOG("RET C");
+        set_instr(current_byte, 0);
+        current_byte++;
+        break;
     case 0xD9: // RETI
         LOG("RETI");
         set_instr(current_byte, 0);
         disassembler->on_head_finished(this);
+        break;
+    case 0xDA: // JP C, a16
+        LOG("JP C, a16");
+        {
+            uint16_t address = *(uint16_t*)(disassembler->cart->rom + current_byte + 1);
+            set_instr(current_byte, 2);
+            branch(address);
+            current_byte += 3;
+        }
         break;
     case 0xE9: // JP (HL)
         LOG("JP (HL)");
@@ -513,6 +569,12 @@ Disassembler::Disassembler(Cartridge * cart, Hints * hints) : cart(cart) {
     {
         for (auto label : hints->labels)
             labels.insert({ label.first, label.second });
+
+        for (auto range : hints->data_ranges)
+        {
+            for (uint64_t address = range.first; address < range.second + 1; address++)
+                byte_type[address] = ByteType::Data;
+        }
     }
 }
 
@@ -563,7 +625,7 @@ void Disassembler::on_head_finished(Head * head)
     removed_heads.push_back(head);
 }
 
-std::string Disassembler::get_label(uif address)
+std::string Disassembler::new_label(uif address)
 {
     auto label_it = labels.find(address);
     if (label_it != labels.end())
@@ -575,6 +637,44 @@ std::string Disassembler::get_label(uif address)
     return name;
 }
 
+std::string Disassembler::get_label(uint64_t address)
+{
+    auto label_it = labels.find(address);
+    if (label_it != labels.end())
+        return (*label_it).second;
+    return "";
+}
+
+std::string Disassembler::get_pointed_label(uint64_t address)
+{
+    uint8_t byte = cart->rom[address];
+    switch (byte)
+    {
+    case 0x20: case 0x30: case 0x18: case 0x28: case 0x38: // r8
+    {
+        int8_t jump = cart->rom[address + 1];
+        uint64_t label_address = address + 2 + jump;
+        std::string label = get_label(label_address);
+        if (label == "")
+            std::cerr << "/!\\ Couldn't find a label at address " << hex<uint64_t>(label_address) << std::endl;
+        return get_label(label_address) + " (" + hex<int8_t>(jump) + ")";
+    }
+    case 0xC2: case 0xD2: case 0xC3: case 0xC4: case 0xD4: case 0xCA: case 0xDA:
+    case 0xCC: case 0xDC: case 0xCD:
+    {
+        uint16_t label_address = *(uint16_t*)(cart->rom + address + 1);
+        if (label_address < 0x4000)
+            return get_label(label_address);
+        if (address < 0x4000 && label_address >= 0x4000)
+            return "ROM Bank";
+        uint64_t target = (address / 0x4000) * 0x4000 + (label_address % 0x4000);
+        return get_label(target);
+    }
+    default:
+        return "";
+    }
+}
+
 #define DUMP(opcode, arity, name) \
     case opcode: \
         { \
@@ -582,7 +682,7 @@ std::string Disassembler::get_label(uif address)
             while(arity_c--) std::cout << " " << hex<uint8_t>(cart->rom[++address]); \
             arity_c = 2 - arity; \
             while(arity_c--) std::cout << "     "; \
-            std::cout << "         " << name; \
+            std::cout << " |        " << name; \
             break; \
         }
 
@@ -593,44 +693,75 @@ void Disassembler::dump()
     {
         if (next_label != labels.end() && next_label->first <= address)
         {
-            std::cout << "                       " << next_label->second << ":" << std::endl;
+            std::cout << "                             | " << next_label->second << ":" << std::endl;
             next_label++;
         }
         uint8_t byte = cart->rom[address];
-        std::cout << "[" << hex<uint8_t>((uint8_t)(address >> 16)) << " "
-            << hex<uint16_t>((uint16_t)address) << "] " << hex<uint8_t>(byte);
+        std::cout << "[" << hex<uint8_t>((uint8_t)(address / 0x4000)) << " "
+            << hex<uint16_t>((uint16_t)(address % 0x4000)) << "] " << hex<uint8_t>(byte);
         ByteType type = byte_type[address];
         switch (type)
         {
         case ByteType::Unknown:
+        {
             std::cout << " ?";
+            uint64_t original_address = address;
             if (byte_type[address + 1] == ByteType::Unknown)
             {
                 std::cout << " -- ";
                 while (address < cart->rom_size && byte_type[++address] == ByteType::Unknown);
                 address--;
-                std::cout << "[" << hex<uint8_t>((uint8_t)(address >> 16)) << " " << hex<uint16_t>((uint16_t)address) << "] ";
+                std::cout << "[" << hex<uint8_t>((uint8_t)(address / 0x4000)) << " "
+                    << hex<uint16_t>((uint16_t)(address % 0x4000)) << "] ";
+                std::cout << " (" << address - original_address + 1 << " bytes skipped)";
             }
-            break;
+        }
+        break;
         case ByteType::Data:
+            if (byte_type[address + 1] == ByteType::Data)
+            {
+                uint64_t counter = 1;
+                while (address < cart->rom_size && byte_type[++address] == ByteType::Data)
+                {
+                    counter++;
+                    std::cout << " " << hex<uint8_t>(cart->rom[address]);
+                    if (counter % 8 == 0 && byte_type[address + 1] == ByteType::Data)
+                    {
+                        std::cout << " data" << std::endl;
+                        std::cout << "[" << hex<uint8_t>((uint8_t)(address / 0x4000)) << " "
+                            << hex<uint16_t>((uint16_t)(address % 0x4000)) << "] ";
+                    }
+                }
+                address--;
+                counter %= 8;
+                while (8 - (counter++)) std::cout << "     ";
+            }
             std::cout << " data";
             break;
         case ByteType::Inst:
+        {
+            uint64_t original_address = address;
             switch (byte)
             {
                 SWITCH_ALL(DUMP)
             case 0xCB:
-                byte = cart->rom[++address];
-                switch (byte)
                 {
-                    SWITCH_CB(DUMP)
+                    uint8_t cb_byte = cart->rom[++address];
+                    switch (cb_byte)
+                    {
+                        SWITCH_CB(DUMP)
+                    }
                 }
                 break;
             default:
                 std::cerr << " Unimplemented opcode dump " << std::endl;
                 exit(-1);
             }
-            break;
+            std::string pointed_label = get_pointed_label(original_address);
+            if (pointed_label != "")
+                std::cout << " -> " << pointed_label;
+        }
+        break;
         case ByteType::Operand:
         default:
             std::cerr << " Unexpected byte type " << type << std::endl;
@@ -638,6 +769,7 @@ void Disassembler::dump()
         }
         std::cout << std::endl;
     }
+
     if (next_label != labels.end())
         std::cerr << "Did not show all labels" << std::endl;
 }
