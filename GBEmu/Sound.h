@@ -29,7 +29,9 @@ private:
     void check_overflow();
 
 public:
-    channel1() : sound(nullptr) { assert(false); }
+    channel1() : sound(nullptr) {
+        //assert(false);
+    }
     channel1(Sound * sound);
 
     void on_trigger();
@@ -54,7 +56,9 @@ private:
     uint8_t envelope_volume;
 
 public:
-    channel2() : sound(nullptr) { assert(false); }
+    channel2() : sound(nullptr) {
+        //assert(false);
+    }
     channel2(Sound * sound);
 
     void on_trigger();
@@ -76,7 +80,9 @@ private:
 
     uint16_t sample_index = 0;
 public:
-    channel3() : sound(nullptr) { assert(false); }
+    channel3() : sound(nullptr) {
+        //assert(false);
+    }
     channel3(Sound * sound);
 
     void on_trigger();

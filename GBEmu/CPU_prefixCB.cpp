@@ -14,7 +14,7 @@
 #include "stdafx.h"
 #include "CPU.h"
 
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
 #define _DEBUG_OUT(o) o
 #else
 #define _DEBUG_OUT(o)
@@ -81,7 +81,7 @@ void CPU::prefixCB()
 {
     uint16_t currentPointer = regs.PC;
     uint8_t instr = nextB();
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
     std::cout << hex<uint8_t>(instr) << " ";
 #endif
     switch (instr)

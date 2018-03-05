@@ -56,7 +56,13 @@ void CPU::run()
 #endif
     }
     std::cout << "--- Execution stopped ---" << std::endl;
+
     regs.dump();
+    stack_trace.dump();
+    std::cout << "IE: " << hex<uint8_t>(int_enable) << "  IF: " << hex<uint8_t>(int_flag)
+        << "  Interrupts " << (interruptsEnabled ? "enabled" : "disabled") << std::endl;
+#ifdef _DEBUG
+#endif
 }
 
 void CPU::DMATranfer(uint8_t source)

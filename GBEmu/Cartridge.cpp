@@ -88,7 +88,7 @@ uint8_t Cartridge::read(uint8_t rom_bank, uint16_t address)
     uint64_t offset = (uint64_t)rom_bank * 0x4000 + address;
     if (offset < rom_size)
         return rom[offset];
-    return 0;
+    return 0xFF;
 }
 
 uint8_t Cartridge::read_ram(uint8_t ram_bank, uint16_t address)
@@ -100,7 +100,7 @@ uint8_t Cartridge::read_ram(uint8_t ram_bank, uint16_t address)
     uint64_t offset = (uint64_t)ram_bank * 0x2000 + address;
     if (offset < ram_size)
         return ram[offset];
-    return 0;
+    return 0xFF;
 }
 
 void Cartridge::write_ram(uint8_t ram_bank, uint16_t address, uint8_t value)

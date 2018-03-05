@@ -303,8 +303,8 @@ void Sound::audio_callback_(uint8_t * stream, int length)
     }
     else
     {
-        printf("Buffer is empty, read %" PRIu64 " - write %" PRIu64 "\n", read_ptr, write_ptr);
-        std::memset(stream, 0x80, length);
+        //printf("Buffer is empty, read %" PRIu64 " - write %" PRIu64 "\n", read_ptr, write_ptr);
+        std::memset(stream, 0x00, length);
     }
 }
 

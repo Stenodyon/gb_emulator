@@ -40,17 +40,17 @@ public:
 
         Disassembler * disassembler;
 
-        void set_instr(uif address, uint8_t arity);
+        void set_instr(uint64_t address, uint8_t arity);
         void jump(uif address);
         void branch(uif address);
 
     public:
-        Head(Disassembler * disassembler, uif start_byte)
+        Head(Disassembler * disassembler, uint64_t start_byte)
             : id(id_counter++), disassembler(disassembler), current_byte(start_byte)
         {}
 
         uint64_t id;
-        uif current_byte;
+        uint64_t current_byte;
 
         void step();
     };
@@ -62,8 +62,8 @@ private:
     std::list<Head*> new_heads;
     std::list<Head*> removed_heads;
 
-    std::map<uif, std::string> labels;
-    std::string new_label(uif address);
+    std::map<uint64_t, std::string> labels;
+    std::string new_label(uint64_t address);
     std::string get_label(uint64_t address);
     std::string get_pointed_label(uint64_t address);
 
@@ -72,7 +72,7 @@ public:
     ~Disassembler();
 
     void disassemble();
-    void add_head(uif address);
+    void add_head(uint64_t address);
     void on_head_finished(Head * head);
     void dump();
 };

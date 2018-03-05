@@ -33,6 +33,7 @@ void Display::OnMachineCycle(uint64_t cycles)
 
 void Display::incrementFrameCycles()
 {
+    //TODO: Implement LY being reset
     if (frameCycles >= 70224)
         frameCycles = 0;
     else

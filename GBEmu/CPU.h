@@ -27,6 +27,7 @@
 #include "Timer.h"
 #include "Sound.h"
 #include "Joypad.h"
+#include "Stacktrace.h"
 
 class OpcodeNotImplemented : public std::runtime_error
 {
@@ -61,6 +62,9 @@ public:
     Serial serial;
     Timer timer;
     Sound sound;
+    Stacktrace stack_trace;
+
+    uint8_t unused_72, unused_73, unused_75;
 
 private:
     bool interruptsEnabled = true;
@@ -187,7 +191,7 @@ public:
 
     void jump(uint16_t address)
     {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
         std::cout << "Jump to " << hex<uint16_t>(address) << std::endl;
 #endif
 #if 0
@@ -206,7 +210,7 @@ public:
     {
         uint16_t address = regs.PC + (int8_t)jump;
         regs.PC = address;
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
         std::cout << "Relative jump to " << hex<uint16_t>(address) << std::endl;
 #endif
     }
@@ -314,13 +318,13 @@ public:
 
     void BIT(uint8_t bit, uint8_t value)
     {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
         std::cout << "  -> Value = " << hex<uint8_t>(value);
 #endif
         regs.Zf = !(value & (0x1 << bit));
         regs.Nf = 0;
         regs.Hf = 1;
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
         std::cout << ", Result = " << +(regs.Zf) << std::endl;
 #endif
     }
@@ -337,7 +341,7 @@ public:
 
     inline void ADD(uint8_t value)
     {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
         std::cout << "  -> reg = " << +value << ", A = " << +(regs.A);
 #endif
         regs.Hf = (regs.A & 0x0F) + (value & 0x0F) > 0x0F;
@@ -345,7 +349,7 @@ public:
         regs.A += value;
         regs.Zf = regs.A == 0;
         regs.Nf = 0;
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
         std::cout << ", result = " << +(regs.A) << std::endl;
 #endif
     }
@@ -362,7 +366,7 @@ public:
 
     inline void SUB(uint8_t value)
     {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
         std::cout << "  -> reg = " << +value << ", A = " << +(regs.A);
 #endif
         regs.Hf = halfcarry_sub(regs.A, value);
@@ -370,7 +374,7 @@ public:
         regs.A -= value;
         regs.Zf = regs.A == 0;
         regs.Nf = 1;
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
         std::cout << ", result = " << +(regs.A) << std::endl;
 #endif
     }
@@ -388,7 +392,7 @@ public:
 
     inline void AND(uint8_t value)
     {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
         std::cout << "  -> reg = " << hex<uint8_t>(value) << ", A = " << hex<uint8_t>(regs.A);
 #endif
         regs.A &= value;
@@ -396,33 +400,33 @@ public:
         regs.Nf = 0;
         regs.Hf = 1;
         regs.Cf = 0;
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
         std::cout << ", result = " << hex<uint8_t>(regs.A) << std::endl;
 #endif
     }
 
     inline void XOR(uint8_t value)
     {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
         std::cout << "  -> reg = " << hex<uint8_t>(value) << ", A = " << hex<uint8_t>(regs.A);
 #endif
         regs.A ^= value;
         regs.Zf = regs.A == 0;
         regs.Nf = regs.Hf = regs.Cf = 0;
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
         std::cout << ", result = " << hex<uint8_t>(regs.A) << std::endl;
 #endif
     }
 
     inline void OR(uint8_t value)
     {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
         std::cout << "  -> reg = " << hex<uint8_t>(value) << ", A = " << hex<uint8_t>(regs.A);
 #endif
         regs.A |= value;
         regs.Zf = regs.A == 0;
         regs.Nf = regs.Hf = regs.Cf = 0;
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
         std::cout << ", result = " << hex<uint8_t>(regs.A) << std::endl;
 #endif
     }
@@ -449,7 +453,7 @@ public:
         {
         case 0x00: // Joypad
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to joypad" << std::endl;
 #endif
             joypad.joypad = value;
@@ -469,7 +473,7 @@ public:
         }
         case 0x04: // Timer Divider
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Reset timer divider" << std::endl;
 #endif
             timer.resetDivider();
@@ -477,7 +481,7 @@ public:
         }
         case 0x05: // Timer counter
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to timer counter" << std::endl;
 #endif
             timer.counter = value;
@@ -485,7 +489,7 @@ public:
         }
         case 0x06: // Timer modulo
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to timer modulo" << std::endl;
 #endif
             timer.modulo = value;
@@ -493,7 +497,7 @@ public:
         }
         case 0x07: // Timer control
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to timer control" << std::endl;
 #endif
             timer.setControlRegister(value);
@@ -501,7 +505,7 @@ public:
         }
         case 0x0F: // Interrupt flag
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to interrupt flag" << std::endl;
 #endif
             int_flag = value;
@@ -509,7 +513,7 @@ public:
         }
         case 0x10: // Sound - Channel 1 Sweep register
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 1 sweep register" << std::endl;
 #endif
             sound.c1_sweep = value;
@@ -517,7 +521,7 @@ public:
         }
         case 0x11: // Sound - Channel 1 Sound Length/Wave pattern duty
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 1 wave duty register" << std::endl;
 #endif
             sound.c1_duty = value;
@@ -525,7 +529,7 @@ public:
         }
         case 0x12: // Sound - Channel 1 Volume envelope
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 1 volume envelope register" << std::endl;
 #endif
             sound.c1_envelope = value;
@@ -533,7 +537,7 @@ public:
         }
         case 0x13: // Sound - Channel 1 Frequency Low
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 1 frequency low register" << std::endl;
 #endif
             sound.c1_frequency.lower = value;
@@ -541,7 +545,7 @@ public:
         }
         case 0x14: // Sound - Channel 1 Frequency High
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 1 frequency high register" << std::endl;
 #endif
             sound.c1_frequency.upper = value;
@@ -554,7 +558,7 @@ public:
         }
         case 0x16: // Sound - Channel 2 Sound Length/Wave pattern duty
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 2 wave duty register" << std::endl;
 #endif
             sound.c2_duty = value;
@@ -562,7 +566,7 @@ public:
         }
         case 0x17: // Sound - Channel 2 Volume envelope
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 2 volume envelope register" << std::endl;
 #endif
             sound.c2_envelope = value;
@@ -570,7 +574,7 @@ public:
         }
         case 0x18: // Sound - Channel 2 Frequency Low
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 2 frequency low register" << std::endl;
 #endif
             sound.c2_frequency.lower = value;
@@ -578,7 +582,7 @@ public:
         }
         case 0x19: // Sound - Channel 2 Frequency High
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 2 frequency high register" << std::endl;
 #endif
             sound.c2_frequency.upper = value;
@@ -586,7 +590,7 @@ public:
         }
         case 0x1A: // Sound - Channel 3 On/Off
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 3 on/off register" << std::endl;
 #endif
             sound.c3_on = value;
@@ -594,7 +598,7 @@ public:
         }
         case 0x1B: // Sound - Channel 3 Sound length
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 3 sound length register" << std::endl;
 #endif
             sound.c3_sound_length = value;
@@ -602,7 +606,7 @@ public:
         }
         case 0x1C: // Sound - Channel 3 Output level
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 3 output level register" << std::endl;
 #endif
             sound.c3_output_level = value;
@@ -610,7 +614,7 @@ public:
         }
         case 0x1D: // Sound - Channel 3 Frequency Low
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 3 frequency low register" << std::endl;
 #endif
             sound.c3_frequency.lower = value;
@@ -618,7 +622,7 @@ public:
         }
         case 0x1E: // Sound - Channel 3 Frequency High
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 3 frequency high register" << std::endl;
 #endif
             sound.c3_frequency.upper = value;
@@ -631,7 +635,7 @@ public:
         }
         case 0x20: // Sound - Channel 3 Sound length
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 4 sound length register" << std::endl;
 #endif
             sound.c4_sound_length = value;
@@ -639,7 +643,7 @@ public:
         }
         case 0x21: // Sound - Channel 4 Volume envelope
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 4 volume envelope register" << std::endl;
 #endif
             sound.c4_envelope = value;
@@ -647,7 +651,7 @@ public:
         }
         case 0x22: // Sound - Channel 4 Polynomial counter
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 4 polynomial counter register" << std::endl;
 #endif
             sound.c4_poly_counter = value;
@@ -655,7 +659,7 @@ public:
         }
         case 0x23: // Sound - Channel 4 Counter consecutive
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 4 counter consecutive register" << std::endl;
 #endif
             sound.c4_counter = value;
@@ -663,7 +667,7 @@ public:
         }
         case 0x24: // Sound - Channel control
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to sound channel control register" << std::endl;
 #endif
             sound.channel_control = value;
@@ -671,7 +675,7 @@ public:
         }
         case 0x25: // Sound - Sound output
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to sound output register" << std::endl;
 #endif
             sound.sound_output = value;
@@ -679,7 +683,7 @@ public:
         }
         case 0x26: // Sound - Master control
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to sound master control register" << std::endl;
 #endif
             sound.master_control = value;
@@ -687,7 +691,7 @@ public:
         }
         case 0x40: // Display - LCD Control
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to display control" << std::endl;
 #endif
             display.control = value;
@@ -695,7 +699,7 @@ public:
         }
         case 0x41: // Display - LCD Status
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to display status" << std::endl;
 #endif
             display.status = value;
@@ -703,7 +707,7 @@ public:
         }
         case 0x42: // Display - Scroll Y
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to display scroll y" << std::endl;
 #endif
             display.scrollY = value;
@@ -711,15 +715,20 @@ public:
         }
         case 0x43: // Display - Scroll X
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to display scroll x" << std::endl;
 #endif
             display.scrollX = value;
             break;
         }
+        case 0x44: // Display - LY (resets)
+        {
+            display.ly = 0;
+            break;
+        }
         case 0x45: // Display - LYC
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to display lyc" << std::endl;
 #endif
             display.lyc = value;
@@ -727,7 +736,7 @@ public:
         }
         case 0x46: // DMA Tranfer
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Initiated a DMA transfer from " << hex<uint16_t>(value << 8) << std::endl;
 #endif
             DMATranfer(value);
@@ -735,7 +744,7 @@ public:
         }
         case 0x47: // Display - Background palette
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to display bg palette" << std::endl;
 #endif
             display.bg_palette = value;
@@ -743,7 +752,7 @@ public:
         }
         case 0x48: // Display - OBJ Palette 0
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to display obj 0 palette" << std::endl;
 #endif
             display.obj_palette0 = value;
@@ -751,7 +760,7 @@ public:
         }
         case 0x49: // Display - OBJ Palette 1
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to display obj 1 palette" << std::endl;
 #endif
             display.obj_palette1 = value;
@@ -759,7 +768,7 @@ public:
         }
         case 0x4A: // Display - Window Y
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to display window y" << std::endl;
 #endif
             display.winPosY = value;
@@ -767,7 +776,7 @@ public:
         }
         case 0x4B: // Display - Window X
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to display window x" << std::endl;
 #endif
             display.winPosX = value;
@@ -775,7 +784,7 @@ public:
         }
         case 0x4D: // CGB - Speed Switch
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to CGB speed switch" << std::endl;
 #endif
             speed_switch = value;
@@ -787,13 +796,27 @@ public:
             //ram.bootstrap = false;
             break;
         }
-        case 0x76: case 0x77: case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E: case 0x7F:
+        case 0x72:
         {
+            unused_72 = value;
             break;
         }
+        case 0x73:
+        {
+            unused_73 = value;
+            break;
+        }
+        case 0x75:
+        {
+            unused_75 = value & 0x38;
+            break;
+        }
+        case 0x6C: case 0x6D: case 0x6E: case 0x6F: case 0x70: case 0x71: case 0x74:
+        case 0x76: case 0x77: case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E: case 0x7F:
+            break;
         case 0xFF: // Interrupt Enable
         {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to interrupt enable" << std::endl;
 #endif
             int_enable = value;
@@ -811,7 +834,7 @@ public:
 
     uint8_t OnIORead(uint8_t port)
     {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
         if (port != 0x00 && port != 0x01 && port != 0x02 && port != 0x44)
             std::cout << "Reading from IO port " << hex<uint8_t>(port) << std::endl;
 #endif
@@ -992,8 +1015,11 @@ private:
 
     void executeInterrupt(uint16_t value)
     {
-#ifdef _DEBUG
+#ifdef _INSTR_LOG
         std::cout << "Executing interrupt " << hex<uint16_t>(value) << std::endl;
+#endif
+#ifdef _DEBUG
+        stack_trace.push(-2, value);
 #endif
         interruptsEnabled = false;
         push(regs.PC);

@@ -18,6 +18,8 @@
 RAM::RAM(Cartridge * cart, CPU * cpu)
     : cart(cart), cpu(cpu), mbc_type(cart->header->get_mbc())
 {
+    if(mbc_type == MBC::MBC1)
+        rom_bank = 1;
 }
 
 uint8_t RAM::read(uint16_t address)
@@ -31,6 +33,7 @@ uint8_t RAM::read(uint16_t address)
         case MBC::ROM:
             return cart->read(1, address - 0x4000);
         case MBC::MBC1:
+            assert(rom_bank.lower != 0);
             return cart->read(rom_bank, address - 0x4000);
         }
     }
@@ -41,7 +44,7 @@ uint8_t RAM::read(uint16_t address)
         if (ram_enabled)
             return cart->read_ram(ram_bank, address - 0xA000);
         else
-            return 0;
+            return 0xFF;
     }
     if (address < 0xE000) // Work RAM
         return work_ram[address - 0xC000];
@@ -86,12 +89,13 @@ void RAM::writeB(uint16_t address, uint8_t value)
         break;
     case MBC::MBC1:
         if (address < 0x2000) // RAM Enable
-            ram_enabled = value == 0x0A;
+            ram_enabled = (value & 0x0F) == 0x0A;
         else if (address < 0x4000) // ROM bank number
         {
             uint8_t _value = value & 0x1F;
             rom_bank.lower = _value == 0 ? 0x01 : value;
-            //std::cout << "New rom bank selected: " << hex<uint8_t>(rom_bank) << std::endl;
+            // std::cout << "New rom bank selected: " << hex<uint8_t>(rom_bank)
+            //     << "(" << hex<uint8_t>(rom_bank.upper) << "|" << hex<uint8_t>(rom_bank.lower) << ")" << std::endl;
         }
         else if (address < 0x6000) // RAM/ROM bank number
         {
@@ -132,4 +136,16 @@ void RAM::writeW(uint16_t address, uint16_t value)
     uint8_t * ptr = (uint8_t*)&value;
     writeB(address, ptr[0]);
     writeB(address + 1, ptr[1]);
+}
+
+uint32_t RAM::physical_address(uint16_t address)
+{
+    if (mbc_type == MBC::ROM)
+        return address;
+    if (address < 0x4000) // BANK 00
+        return address;
+    if (address >= 0x8000) // Not on the ROM
+        return -1;
+
+    return (uint32_t)(address - 0x4000) + 0x4000 * (uint32_t)rom_bank;
 }

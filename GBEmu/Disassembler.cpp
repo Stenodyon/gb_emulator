@@ -244,7 +244,7 @@
 
 
 #ifdef _DEBUG
-#define LOG(msg) std::cout << id << " - [" << hex<uint16_t>(current_byte) << "] " << msg << std::endl;
+#define LOG(msg) std::cout << id << " - [" << hex<uint32_t>((uint32_t)current_byte) << "] " << msg << std::endl;
 #else
 #define LOG(msg)
 #endif
@@ -276,19 +276,19 @@ std::ostream & operator<<(std::ostream & out, ByteType & byte_type)
 
 uint64_t Disassembler::Head::id_counter = 0;
 
-void Disassembler::Head::set_instr(uif address, uint8_t arity)
+void Disassembler::Head::set_instr(uint64_t address, uint8_t arity)
 {
     disassembler->byte_type[address] = ByteType::Inst;
-    uint16_t instr_address = address;
+    uint64_t instr_address = address;
     for (uint8_t count = 0; count < arity; count++)
     {
         address++;
         ByteType byte_type = disassembler->byte_type[address];
         if (byte_type != ByteType::Unknown)
         {
-            std::cerr << "Byte type is not unkown at [" << hex<uint16_t>(address) << "] ("
+            std::cerr << "Byte type is not unkown at [" << hex<uint32_t>((uint32_t)address) << "] ("
                 << byte_type << ") while trying to uncover an instruction at "
-                << hex<uint16_t>(instr_address) << std::endl;
+                << hex<uint32_t>((uint32_t)instr_address) << std::endl;
             disassembler->dump();
             exit(-1);
         }
@@ -310,7 +310,7 @@ void Disassembler::Head::jump(uif address)
     }
     else
     {
-        uif target = (current_byte / 0x4000) * 0x4000 + (address % 0x4000);
+        uint64_t target = (current_byte / 0x4000) * 0x4000 + (address % 0x4000);
         disassembler->new_label(target);
         current_byte = target;
     }
@@ -329,11 +329,19 @@ void Disassembler::Head::branch(uif address)
     }
     else
     {
-        uif target = (current_byte / 0x4000) * 0x4000 + (address % 0x4000);
+        uint64_t target = (current_byte / 0x4000) * 0x4000 + (address % 0x4000);
         disassembler->new_label(target);
         disassembler->add_head(target);
     }
 }
+
+#define STEP_RST(opcode, address) \
+        case opcode: \
+            LOG("RST " #address); \
+            set_instr(current_byte, 0); \
+            branch(address); \
+            current_byte++; \
+            break;
 
 void Disassembler::Head::step()
 {
@@ -348,10 +356,14 @@ void Disassembler::Head::step()
     {
         if (disassembler->byte_type[current_byte] != ByteType::Inst)
         {
-            std::cerr << "Trying to read address " << hex<uint16_t>(current_byte)
+            std::cerr << "Trying to read address " << hex<uint32_t>((uint32_t)current_byte)
                 << " as an instruction but it is a(n) " << disassembler->byte_type[current_byte] << std::endl;
+            disassembler->on_head_finished(this);
+            return;
+#if 0
             disassembler->dump();
             exit(-1);
+#endif
         }
         disassembler->on_head_finished(this);
         return;
@@ -364,7 +376,7 @@ void Disassembler::Head::step()
     case 0x18: // JR r8
         LOG("JR r8");
         {
-            uint16_t address = current_byte + 2 + (int8_t)(disassembler->cart->rom[current_byte + 1]);
+            uint16_t address = (uint16_t)current_byte + 2 + (int8_t)(disassembler->cart->rom[current_byte + 1]);
             set_instr(current_byte, 1);
             jump(address);
         }
@@ -372,7 +384,7 @@ void Disassembler::Head::step()
     case 0x20:
         LOG("JR NZ, r8")
         {
-            uint16_t address = current_byte + 2 + (int8_t)(disassembler->cart->rom[current_byte + 1]);
+            uint16_t address = (uint16_t)current_byte + 2 + (int8_t)(disassembler->cart->rom[current_byte + 1]);
             set_instr(current_byte, 1);
             branch(address);
             current_byte += 2;
@@ -381,7 +393,7 @@ void Disassembler::Head::step()
     case 0x28: // JR Z, r8
         LOG("JR Z, r8")
         {
-            uint16_t address = current_byte + 2 + (int8_t)(disassembler->cart->rom[current_byte + 1]);
+            uint16_t address = (uint16_t)current_byte + 2 + (int8_t)(disassembler->cart->rom[current_byte + 1]);
             set_instr(current_byte, 1);
             branch(address);
             current_byte += 2;
@@ -390,7 +402,7 @@ void Disassembler::Head::step()
     case 0x30: // JR NC, r8
         LOG("JR NC, r8")
         {
-            uint16_t address = current_byte + 2 + (int8_t)(disassembler->cart->rom[current_byte + 1]);
+            uint16_t address = (uint16_t)current_byte + 2 + (int8_t)(disassembler->cart->rom[current_byte + 1]);
             set_instr(current_byte, 1);
             branch(address);
             current_byte += 2;
@@ -399,7 +411,7 @@ void Disassembler::Head::step()
     case 0x38: // JR C, r8
         LOG("JR C, r8")
         {
-            uint16_t address = current_byte + 2 + (int8_t)(disassembler->cart->rom[current_byte + 1]);
+            uint16_t address = (uint16_t)current_byte + 2 + (int8_t)(disassembler->cart->rom[current_byte + 1]);
             set_instr(current_byte, 1);
             branch(address);
             current_byte += 2;
@@ -532,21 +544,24 @@ void Disassembler::Head::step()
         set_instr(current_byte, 0);
         disassembler->on_head_finished(this);
         return;
-    case 0xF7: // RST 0x30
-        LOG("RST 0x30");
-        set_instr(current_byte, 0);
-        current_byte = 0x0030;
-        break;
-    case 0xFF: // RST 0x38
-        LOG("RST 0x38");
-        set_instr(current_byte, 0);
-        current_byte = 0x0038;
-        break;
+    STEP_RST(0xC7, 0x00)
+    STEP_RST(0xD7, 0x10)
+    STEP_RST(0xE7, 0x20)
+    STEP_RST(0xF7, 0x30)
+    STEP_RST(0xCF, 0x08)
+    STEP_RST(0xDF, 0x18)
+    STEP_RST(0xEF, 0x28)
+    STEP_RST(0xFF, 0x38)
     default:
         std::cerr << "Unimplemented instruction "
-            << hex<uint8_t>(instr) << " at " << hex<uint16_t>(current_byte) << std::endl;
+            << hex<uint8_t>(instr) << " at " << hex<uint32_t>((uint32_t)current_byte) << std::endl;
+#if 0
         disassembler->dump();
         exit(-1);
+#else
+        disassembler->on_head_finished(this);
+        break;
+#endif
     }
 }
 
@@ -608,31 +623,31 @@ void Disassembler::disassemble()
     std::cout << "Disassembly finished :)" << std::endl;
 }
 
-void Disassembler::add_head(uif address)
+void Disassembler::add_head(uint64_t address)
 {
     Head * head = new Head(this, address);
     new_heads.push_back(head);
 #ifdef _DEBUG
-    std::cout << "New head spawned (" << head->id << ") at address " << hex<uint16_t>(head->current_byte) << std::endl;
+    std::cout << "New head spawned (" << head->id << ") at address " << hex<uint32_t>((uint32_t)head->current_byte) << std::endl;
 #endif
 }
 
 void Disassembler::on_head_finished(Head * head)
 {
 #ifdef _DEBUG
-    std::cout << "Head finished (" << head->id << ") at address " << hex<uint16_t>(head->current_byte) << std::endl;
+    std::cout << "Head finished (" << head->id << ") at address " << hex<uint32_t>((uint32_t)head->current_byte) << std::endl;
 #endif
     removed_heads.push_back(head);
 }
 
-std::string Disassembler::new_label(uif address)
+std::string Disassembler::new_label(uint64_t address)
 {
     auto label_it = labels.find(address);
     if (label_it != labels.end())
         return (*label_it).second;
     // else
 
-    std::string name = "loc_" + hex<uif>(address);
+    std::string name = "loc_" + hex<uif>((uif)address);
     labels.insert({ address, name });
     return name;
 }
@@ -666,7 +681,7 @@ std::string Disassembler::get_pointed_label(uint64_t address)
         if (label_address < 0x4000)
             return get_label(label_address);
         if (address < 0x4000 && label_address >= 0x4000)
-            return "ROM Bank";
+            return "ROM Bank (" + hex<uint16_t>(label_address % 0x4000) + ")";
         uint64_t target = (address / 0x4000) * 0x4000 + (label_address % 0x4000);
         return get_label(target);
     }
@@ -729,7 +744,7 @@ void Disassembler::dump()
                     {
                         std::cout << " data" << std::endl;
                         std::cout << "[" << hex<uint8_t>((uint8_t)(address / 0x4000)) << " "
-                            << hex<uint16_t>((uint16_t)(address % 0x4000)) << "] ";
+                            << hex<uint16_t>((uint16_t)(address % 0x4000)) << "]";
                     }
                 }
                 address--;

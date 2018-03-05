@@ -11,37 +11,33 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
-#pragma once
+#include "stdafx.h"
+#include "Stacktrace.h"
 
-#include "Cartridge.h"
+#include <sstream>
 
-class CPU;
+#include "hex.h"
 
-class RAM
+void Stacktrace::push(uint32_t from, uint32_t to)
 {
-private:
-    Cartridge * cart;
-    CPU * cpu;
+    stack_trace.push_back({ from, to });
+}
 
-    const MBC mbc_type;
+void Stacktrace::pop()
+{
+    if (stack_trace.size() != 0)
+        stack_trace.pop_back();
+    else
+        std::cerr << "RET with no matching call" << std::endl;
+}
 
-    bool ram_enabled = false;
-    _REGISTER(rom_bank, uint8_t lower : 5; uint8_t upper : 2;)
-        uint8_t ram_bank = 0;
-    bool ram_mode = false;
-
-    uint8_t work_ram[0x2000];
-    uint8_t high_ram[0x7F];
-
-public:
-    RAM(Cartridge * cart, CPU * cpu);
-
-    uint8_t get_rom_bank() { return rom_bank.value; }
-
-    uint8_t read(uint16_t address);
-    void writeB(uint16_t address, uint8_t value);
-    void writeW(uint16_t address, uint16_t value);
-
-    uint32_t physical_address(uint16_t address);
-};
-
+void Stacktrace::dump()
+{
+    std::cerr << "Stack trace:" << std::endl;
+    for (auto _trace : stack_trace)
+    {
+        std::cerr << "[" << hex<uint32_t>(_trace.first) << "] Call to"
+            << hex<uint32_t>(_trace.second) << std::endl;
+    }
+    std::cerr << "---" << std::endl;
+}
