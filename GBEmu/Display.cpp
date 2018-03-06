@@ -176,9 +176,22 @@ uint8_t Display::getWinColorUnderPixel(uint8_t x, uint8_t y)
     return getWindowColor(x - (winPosX - 7), y - winPosY);
 }
 
-bool sprite_ptr_comp(sprite * a, sprite * b)
+bool sprite_ptr_comp8(sprite * a, sprite * b)
 {
-    return *a < *b;
+    if (a->x + 8 <= b->x || b->x + 8 <= a->x)
+        return false;
+    if (a->y + 8 <= b->y || b->y + 8 <= a->y)
+        return false;
+    return a->x < b->x;
+}
+
+bool sprite_ptr_comp16(sprite * a, sprite * b)
+{
+    if (a->x + 8 <= b->x || b->x + 8 <= a->x)
+        return false;
+    if (a->y + 16 <= b->y || b->y + 16 <= a->y)
+        return false;
+    return a->x < b->x;
 }
 
 void Display::getVisibleSprites(uint8_t line, sprite * buffer[], uint8_t & count)
@@ -194,13 +207,14 @@ void Display::getVisibleSprites(uint8_t line, sprite * buffer[], uint8_t & count
             && ((!obj_size && line < spriteY + 8)
                 || (obj_size && line < spriteY + 16)))
         {
-            //buffer[count] = sprite;
             visible_sprites[count] = sprite;
             count++;
-            //if (count == 10) break;
         }
     }
-    std::sort<sprite**>(visible_sprites, visible_sprites + count, sprite_ptr_comp);
+    if (obj_size)
+        std::sort<sprite**>(visible_sprites, visible_sprites + count, sprite_ptr_comp16);
+    else
+        std::sort<sprite**>(visible_sprites, visible_sprites + count, sprite_ptr_comp8);
     count = std::min(count, (uint8_t)10);
     std::memcpy(buffer, visible_sprites, count * sizeof(sprite*));
 }
@@ -215,11 +229,11 @@ uint8_t Display::getSpriteColor(sprite * sprite, uint8_t x, uint8_t y)
     int16_t spriteX = sprite->x - 0x08;
     int16_t spriteY = sprite->y - 0x10;
     if (x < spriteX || y < spriteY || x >= spriteX + 8)
-        return 0;
+        return 0xFF;
     if (!obj_size)
     {
         if (y >= spriteY + 8)
-            return 0;
+            return 0xFF;
         tile * _tile = getSpriteTile(sprite->chr_code);
         uint8_t relX = x - spriteX;
         uint8_t relY = y - spriteY;
@@ -233,7 +247,7 @@ uint8_t Display::getSpriteColor(sprite * sprite, uint8_t x, uint8_t y)
     else
     {
         if (y >= spriteY + 16)
-            return 0;
+            return 0xFF;
         uint8_t relX = x - spriteX;
         uint8_t relY = y - spriteY;
         if (sprite->hor_flip)
@@ -279,14 +293,15 @@ void Display::drawLine(uint8_t line)
             {
                 sprite * sprite = visible_sprites[sprite_index];
                 uint8_t colorCode = getSpriteColor(sprite, x, line);
-                if (colorCode != 0 && (!sprite->priority || bgcolor == 0))
+                if (colorCode != 0xFF)
                 {
-#if 1
-                    palette * pal = sprite->palette ? &obj_palette1 : &obj_palette0;
-                    uint8_t color = (*pal)[colorCode];
-#endif
-                    drawPixel(x, line, color, true);
+                    if (colorCode != 0 && (!sprite->priority || bgcolor == 0))
+                    {
+                        palette * pal = sprite->palette ? &obj_palette1 : &obj_palette0;
+                        uint8_t color = (*pal)[colorCode];
+                        drawPixel(x, line, color, true);
                     break;
+                    }
                 }
             }
         }
