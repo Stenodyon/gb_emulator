@@ -51,7 +51,7 @@ private:
             left_B = ~((!select_directions && left) | (!select_buttons && button_b));
             up_select = ~((!select_directions && up) | (!select_buttons && button_select));
             down_start = ~((!select_directions && down) | (!select_buttons && button_start));
-            return this->value; // 0 means button is pressed
+            return this->value | 0xC0; // 0 means button is pressed
         }
     };
 public:
