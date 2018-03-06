@@ -219,8 +219,6 @@ public:
 
     void push(uint16_t value)
     {
-        if (value == 0x388F)
-            std::cout << "Pushed 0x388F here" << std::endl;
         //std::cout << hex<uint16_t>(regs.PC) << " pushed " << hex<uint16_t>(value) << std::endl;
         stack_depth++;
         regs.SP -= 2;

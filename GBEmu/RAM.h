@@ -29,6 +29,8 @@ private:
     _REGISTER(rom_bank, uint8_t lower : 5; uint8_t upper : 2;)
         uint8_t ram_bank = 0;
     bool ram_mode = false;
+    uint8_t rtc_register;
+    uint8_t latch_clock_data;
 
     uint8_t work_ram[0x2000];
     uint8_t high_ram[0x7F];

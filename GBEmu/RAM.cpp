@@ -38,6 +38,8 @@ uint8_t RAM::read(uint16_t address)
                 return cart->read(rom_bank & 0x7F, address - 0x4000);
             else
                 return cart->read(rom_bank & 0x1F, address - 0x4000);
+        case MBC::MBC3:
+            return cart->read(rom_bank & 0x7F, address - 0x4000);
         }
     }
     if (address < 0xA000) // Video RAM
@@ -45,9 +47,15 @@ uint8_t RAM::read(uint16_t address)
     if (address < 0xC000) // External RAM
     {
         if (ram_enabled)
+        {
+            if (mbc_type == MBC::MBC3 && ram_bank > 0x03)
+                return 0xFF; //TODO: return current RTC
             return cart->read_ram(ram_bank, address - 0xA000);
+        }
         else
+        {
             return 0xFF;
+        }
     }
     if (address < 0xE000) // Work RAM
         return work_ram[address - 0xC000];
@@ -97,26 +105,51 @@ void RAM::writeB(uint16_t address, uint8_t value)
         {
             uint8_t _value = value & 0x1F;
             rom_bank.lower = _value == 0 ? 0x01 : value;
-#ifdef _DEBUG
-            std::cout << hex<uint32_t>(physical_address(cpu->regs.PC)) << " changed ROM Bank " << +rom_bank << std::endl;
-#endif
         }
         else if (address < 0x6000) // RAM/ROM bank number
         {
             if (ram_mode)
-            {
                 ram_bank = value & 0x3;
-            }
             else
-            {
                 rom_bank.upper = value;
-#ifdef _DEBUG
-                std::cout << hex<uint32_t>(physical_address(cpu->regs.PC)) << " changed ROM Bank " << +rom_bank << std::endl;
-#endif
-            }
         }
         else if (address < 0x8000) // Mode select
             ram_mode = value;
+        else if (address < 0xA000) // Video RAM
+            cpu->display.vram[address - 0x8000] = value;
+        else if (address < 0xC000) // External RAM
+            cart->write_ram(0, address - 0xA000, value);
+        else if (address < 0xE000) // Work RAM
+            work_ram[address - 0xC000] = value;
+        else if (address < 0xFE00) // Echo RAM
+            work_ram[address - 0xC000] = value;
+        else if (address < 0xFEA0) // OAM RAM
+            cpu->display.oam_ram[address - 0xFE00] = value;
+        else if (address < 0xFF00) // Unusable RAM
+            return;
+        else if (address < 0xFF80) // IO Registers
+            cpu->OnIOWrite(address & 0xFF, value);
+        else if (address < 0xFFFF) // High RAM
+            high_ram[address - 0xFF80] = value;
+        else
+            cpu->OnIOWrite(0xFF, value);
+        break;
+    case MBC::MBC3:
+        if (address < 0x2000) // RAM Enable
+            ram_enabled = (value & 0x0F) == 0x0A;
+        else if (address < 0x4000) // ROM bank number
+        {
+            uint8_t _value = value & 0x7F;
+            rom_bank = _value == 0 ? 0x01 : value;
+        }
+        else if (address < 0x6000) // RAM/RTC bank number
+            rtc_register = value;
+        else if (address < 0x8000) // Mode select
+        {
+            if (latch_clock_data == 0 && value == 0x01)
+                ; //TODO: On latch clock
+            latch_clock_data = value;
+        }
         else if (address < 0xA000) // Video RAM
             cpu->display.vram[address - 0x8000] = value;
         else if (address < 0xC000) // External RAM
