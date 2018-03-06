@@ -26,7 +26,7 @@ private:
 
 public:
     void push(uint32_t from, uint32_t to);
-    void pop();
+    void pop(uint32_t from, uint32_t to);
     void dump();
 };
 

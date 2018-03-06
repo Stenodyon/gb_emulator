@@ -66,6 +66,8 @@ public:
 
     uint8_t unused_72, unused_73, unused_75;
 
+    int64_t stack_depth;
+
 private:
     bool interruptsEnabled = true;
     bool halted = false;
@@ -217,6 +219,10 @@ public:
 
     void push(uint16_t value)
     {
+        if (value == 0x388F)
+            std::cout << "Pushed 0x388F here" << std::endl;
+        //std::cout << hex<uint16_t>(regs.PC) << " pushed " << hex<uint16_t>(value) << std::endl;
+        stack_depth++;
         regs.SP -= 2;
         uint8_t * ptr = (uint8_t*)&value;
         ram.writeB(regs.SP, ptr[0]);
@@ -227,6 +233,7 @@ public:
 
     uint16_t pop()
     {
+        stack_depth--;
         uint16_t value;
         uint8_t * ptr = (uint8_t*)&value;
         ptr[0] = ram.read(regs.SP);
@@ -234,6 +241,7 @@ public:
         ptr[1] = ram.read(regs.SP + 1);
         cycleWait(4);
         regs.SP += 2;
+        //std::cout << hex<uint16_t>(regs.PC) << " poped " << hex<uint16_t>(value) << std::endl;
         return value;
     }
 
@@ -723,7 +731,8 @@ public:
         }
         case 0x44: // Display - LY (resets)
         {
-            display.ly = 0;
+            //display.ly = 0;
+            display.frameCycles %= 456;
             break;
         }
         case 0x45: // Display - LYC

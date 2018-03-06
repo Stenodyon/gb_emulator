@@ -50,6 +50,7 @@ private:
         uint8_t checksum;
         uint8_t global_checksum[2];
 
+        uint32_t get_rom_bank_count() const;
         uint64_t get_ram_size() const;
         MBC get_mbc() const;
     };
@@ -61,6 +62,7 @@ public:
     uint8_t * ram;
     uint64_t ram_size;
     cart_header * header;
+    uint32_t rom_bank_count;
 
     Cartridge(uint8_t * data, uint64_t size);
     ~Cartridge();

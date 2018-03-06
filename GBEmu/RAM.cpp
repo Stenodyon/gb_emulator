@@ -34,7 +34,10 @@ uint8_t RAM::read(uint16_t address)
             return cart->read(1, address - 0x4000);
         case MBC::MBC1:
             assert(rom_bank.lower != 0);
-            return cart->read(rom_bank, address - 0x4000);
+            if (!ram_mode)
+                return cart->read(rom_bank & 0x7F, address - 0x4000);
+            else
+                return cart->read(rom_bank & 0x1F, address - 0x4000);
         }
     }
     if (address < 0xA000) // Video RAM
@@ -94,15 +97,23 @@ void RAM::writeB(uint16_t address, uint8_t value)
         {
             uint8_t _value = value & 0x1F;
             rom_bank.lower = _value == 0 ? 0x01 : value;
-            // std::cout << "New rom bank selected: " << hex<uint8_t>(rom_bank)
-            //     << "(" << hex<uint8_t>(rom_bank.upper) << "|" << hex<uint8_t>(rom_bank.lower) << ")" << std::endl;
+#ifdef _DEBUG
+            std::cout << hex<uint32_t>(physical_address(cpu->regs.PC)) << " changed ROM Bank " << +rom_bank << std::endl;
+#endif
         }
         else if (address < 0x6000) // RAM/ROM bank number
         {
             if (ram_mode)
+            {
                 ram_bank = value & 0x3;
+            }
             else
+            {
                 rom_bank.upper = value;
+#ifdef _DEBUG
+                std::cout << hex<uint32_t>(physical_address(cpu->regs.PC)) << " changed ROM Bank " << +rom_bank << std::endl;
+#endif
+            }
         }
         else if (address < 0x8000) // Mode select
             ram_mode = value;

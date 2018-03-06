@@ -76,6 +76,8 @@ public:
     uint8_t vram[0x2000];
     uint8_t oam_ram[0xA0];
 
+    uint64_t frameCycles = 0;
+
 private:
     SDL_Window * win;
     SDL_Renderer * renderer;
@@ -100,7 +102,6 @@ public:
 private:
     pixel * pixel_buffer;
     SDL_Texture * win_texture;
-    uint64_t frameCycles = 0;
 
     struct palette
     {
@@ -136,8 +137,6 @@ private:
     tile * getTile(uint8_t index);
     void getVisibleSprites(uint8_t line, sprite * buffer[], uint8_t &count);
     void drawLine(uint8_t line);
-
-    //TODO: Implement the Window
 
 public:
     union {

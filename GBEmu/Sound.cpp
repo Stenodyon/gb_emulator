@@ -24,7 +24,6 @@
 
 channel1::channel1(Sound * sound) : sound(sound)
 {
-    std::cout << "Channel 1 initialized" << std::endl;
 }
 
 void channel1::check_overflow()
@@ -132,7 +131,6 @@ uint8_t channel1::get_sample()
 
 channel2::channel2(Sound * sound) : sound(sound)
 {
-    std::cout << "Channel 1 initialized" << std::endl;
 }
 
 void channel2::on_trigger()
@@ -252,6 +250,84 @@ uint8_t channel3::get_sample()
     return sample_value;
 }
 
+channel4::channel4(Sound * sound) : sound(sound) {}
+
+void channel4::on_trigger()
+{
+    sound->master_control.sound4 = 1;
+    if (sound->c4_sound_length == 0)
+        sound->c4_sound_length = 0x3F;
+    envelope_volume = sound->c4_envelope.initial_volume;
+    envelope_counter = sound->c4_envelope.length;
+    lfsr = 0x7FFF;
+}
+
+void channel4::on_length_clock()
+{
+    if (sound->master_control.sound4 && sound->c4_counter.counter)
+    {
+        sound->c4_sound_length--;
+        if (sound->c4_sound_length == 0)
+            sound->master_control.sound4 = 0;
+    }
+}
+
+void channel4::on_envelope_clock()
+{
+    envelope_counter--;
+    if (envelope_counter == 0)
+    {
+        envelope_counter = sound->c4_envelope.length;
+        int8_t change = sound->c4_envelope.direction ? 0x01 : -0x01;
+        uint8_t new_volume = envelope_volume + change;
+        if (new_volume > 0x0F)
+            return;
+        envelope_volume = new_volume;
+    }
+}
+
+void channel4::on_frequency_clock()
+{
+    bool low_xor = xor_a ^ xor_b;
+    lfsr >>= 1;
+    high_set = low_xor;
+    if (sound->c4_poly_counter.width)
+        low_set = low_xor;
+}
+
+uint64_t noise_periods[8] = {
+    8, 16, 32, 48, 64, 80, 96, 112
+};
+
+uint64_t channel4::get_period()
+{
+    return noise_periods[sound->c4_poly_counter.ratio] << (sound->c4_poly_counter.shift_frequency + 1);
+}
+
+uint8_t channel4::get_sample()
+{
+    if (sound->c4_envelope.initial_volume == 0
+        && sound->c4_envelope.direction == 0) // OFF mode
+        sound->master_control.sound4 = 0;
+
+    if (!sound->master_control.sound4)
+        return 0x00;
+
+    if (sound->c4_envelope.length == 0
+        && sound->c4_envelope.initial_volume == 0
+        && sound->c4_envelope.direction == 1) // Second mute mode
+        return 0x00;
+
+    uint8_t value = 0x00;
+
+    if (!xor_a)
+        value = envelope_volume;
+    else
+        value = 0x00;
+
+    return value;
+}
+
 void audio_callback(void * _sound, Uint8 * stream, int length);
 
 void Sound::init()
@@ -336,6 +412,12 @@ void Sound::OnMachineCycle(uint64_t cycles)
             chan3.on_trigger();
             c3_frequency.upper.initial = 0;
         }
+        chan4.on_cycle();
+        if (c4_counter.initial)
+        {
+            chan4.on_trigger();
+            c4_counter.initial = 0;
+        }
 #if 1
         elapsed_cycle += 1.;
         if (elapsed_cycle >= CYCLES_PER_SAMPLE)
@@ -380,6 +462,7 @@ uint8_t Sound::sample_audio()
     uint8_t c1_sample = chan1.get_sample();
     uint8_t c2_sample = chan2.get_sample();
     uint8_t c3_sample = chan3.get_sample();
+    uint8_t c4_sample = chan4.get_sample();
 
     uint64_t so1 = 0, so2 = 0;
     if (sound_output.sound1_so1)
@@ -394,6 +477,10 @@ uint8_t Sound::sample_audio()
         so1 += c3_sample;
     if (sound_output.sound3_so2)
         so2 += c3_sample;
+    if (sound_output.sound4_so1)
+        so1 += c4_sample;
+    if (sound_output.sound4_so2)
+        so2 += c4_sample;
 
     so1 *= (channel_control.so1_level + 1);
     so2 *= (channel_control.so2_level + 1);

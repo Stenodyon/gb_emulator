@@ -97,6 +97,42 @@ public:
     uint8_t get_sample();
 };
 
+class channel4
+{
+private:
+    Sound * sound;
+
+    uint8_t envelope_counter;
+    uint8_t envelope_volume;
+    union {
+        uint16_t lfsr : 15;
+        struct {
+            uint8_t xor_a : 1;
+            uint8_t xor_b : 1;
+            uint8_t pad1 : 4;
+            uint8_t low_set : 1;
+            uint8_t pad2 : 8;
+            uint8_t high_set : 1;
+        };
+    };
+public:
+    channel4() : sound(nullptr) {
+        //assert(false);
+    }
+    channel4(Sound * sound);
+
+    void on_trigger();
+
+    void on_sweep_clock() {}
+    void on_length_clock();
+    void on_envelope_clock();
+
+    void on_frequency_clock();
+    uint64_t get_period();
+
+    uint8_t get_sample();
+};
+
 template <typename ChanType>
 class Channel : public ChanType
 {
@@ -270,7 +306,7 @@ private:
 #pragma pack(push, 1)
             struct {
                 uint8_t ratio : 3;
-                uint8_t counter_step : 1;
+                uint8_t width : 1;
                 uint8_t shift_frequency : 4;
             };
 #pragma pack(pop)
@@ -401,8 +437,9 @@ public:
     Channel<channel1> chan1;
     Channel<channel2> chan2;
     Channel<channel3> chan3;
+    Channel<channel4> chan4;
 
-    Sound() : chan1(this), chan2(this), chan3(this) {}
+    Sound() : chan1(this), chan2(this), chan3(this), chan4(this) {}
 
     void OnMachineCycle(uint64_t cycles);
     void init();

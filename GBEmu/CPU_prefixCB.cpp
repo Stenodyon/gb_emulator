@@ -30,6 +30,16 @@
 	_APPLY_HL(OFFSET + 0x6, f) \
 	_APPLY_REG(OFFSET + 0x7, A, f)
 
+#define _APPLY_NOWRITE(OFFSET, f) \
+	_APPLY_REG(OFFSET + 0x0, B, f) \
+	_APPLY_REG(OFFSET + 0x1, C, f) \
+	_APPLY_REG(OFFSET + 0x2, D, f) \
+	_APPLY_REG(OFFSET + 0x3, E, f) \
+	_APPLY_REG(OFFSET + 0x4, H, f) \
+	_APPLY_REG(OFFSET + 0x5, L, f) \
+	_APPLY_HL_NOWRITE(OFFSET + 0x6, f) \
+	_APPLY_REG(OFFSET + 0x7, A, f)
+
 #define _APPLY_REG(VAL, REG, o) \
 	case VAL: \
 	{ \
@@ -47,6 +57,16 @@
 		o(value); \
 		cycleWait(16); \
 		ram.writeB(regs.HL, value); \
+		break; \
+	}
+
+#define _APPLY_HL_NOWRITE(VAL, o) \
+	case VAL: \
+	{ \
+		_DEBUG_OUT(std::cout << #o << " (HL)" << std::endl;) \
+		uint8_t value = ram.read(regs.HL); \
+		o(value); \
+		cycleWait(16); \
 		break; \
 	}
 
@@ -94,14 +114,14 @@ void CPU::prefixCB()
             _APPLY(0x28, SRA)
             _APPLY(0x30, SWAP)
             _APPLY(0x38, SRL)
-            _APPLY(0x40, BIT0)
-            _APPLY(0x48, BIT1)
-            _APPLY(0x50, BIT2)
-            _APPLY(0x58, BIT3)
-            _APPLY(0x60, BIT4)
-            _APPLY(0x68, BIT5)
-            _APPLY(0x70, BIT6)
-            _APPLY(0x78, BIT7)
+            _APPLY_NOWRITE(0x40, BIT0)
+            _APPLY_NOWRITE(0x48, BIT1)
+            _APPLY_NOWRITE(0x50, BIT2)
+            _APPLY_NOWRITE(0x58, BIT3)
+            _APPLY_NOWRITE(0x60, BIT4)
+            _APPLY_NOWRITE(0x68, BIT5)
+            _APPLY_NOWRITE(0x70, BIT6)
+            _APPLY_NOWRITE(0x78, BIT7)
             _APPLY(0x80, RES0)
             _APPLY(0x88, RES1)
             _APPLY(0x90, RES2)

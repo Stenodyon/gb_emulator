@@ -18,6 +18,40 @@
 
 const uint16_t HEADER_OFFSET = 0x0100;
 
+uint32_t Cartridge::cart_header::get_rom_bank_count() const
+{
+    switch (rom_size)
+    {
+    case 0x00: // 32KB
+        return 2;
+    case 0x01: // 64KB
+        return 4;
+    case 0x02: // 128KB
+        return 8;
+    case 0x03: // 256KB
+        return 16;
+    case 0x04: // 512KB
+        return 32;
+    case 0x05: // 1MB
+        return 64;
+    case 0x06: // 2MB
+        return 128;
+    case 0x07: // 4MB
+        return 256;
+    case 0x08: // 8MB
+        return 512;
+    case 0x52: // 1.1MB
+        return 72;
+    case 0x53: // 1.2MB
+        return 80;
+    case 0x54: // 1.5MB
+        return 96;
+    default:
+        std::cerr << "INVALID ROM SIZE " << hex<uint8_t>(ram_size) << std::endl;
+        exit(-1);
+    }
+}
+
 uint64_t Cartridge::cart_header::get_ram_size() const
 {
     switch (ram_size)
@@ -71,6 +105,8 @@ Cartridge::Cartridge(uint8_t * data, uint64_t size)
     ram_size = header->get_ram_size();
     if (ram_size > 0)
         ram = (uint8_t*)malloc(ram_size * sizeof(uint8_t));
+
+    rom_bank_count = header->get_rom_bank_count();
 }
 
 
@@ -85,7 +121,7 @@ uint8_t Cartridge::read(uint8_t rom_bank, uint16_t address)
 #ifdef _DEBUG
     assert(address < 0x4000);
 #endif
-    uint64_t offset = (uint64_t)rom_bank * 0x4000 + address;
+    uint64_t offset = (uint64_t)(rom_bank % rom_bank_count) * 0x4000 + address;
     if (offset < rom_size)
         return rom[offset];
     return 0xFF;

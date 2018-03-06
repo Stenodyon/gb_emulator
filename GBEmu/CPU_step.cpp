@@ -15,6 +15,10 @@
 #include "stdafx.h"
 #include "CPU.h"
 
+#if 0
+#define _INSTR_LOG
+#endif
+
 void CPU::step()
 {
     /*
@@ -43,7 +47,9 @@ void CPU::step()
     }
 #endif
 #ifdef _INSTR_LOG
-    std::cout << "[" << hex<uint16_t>(currentPointer) << "] " << hex<uint8_t>(instr) << " ";
+    std::cout << "[" << hex<uint16_t>(currentPointer)
+        << " | " << hex<uint32_t>(ram.physical_address(currentPointer))
+        << "] " << hex<uint8_t>(instr) << " ";
 #endif
     switch (instr)
     {
@@ -1930,11 +1936,12 @@ void CPU::step()
 #endif
         if (!regs.Zf)
         {
-#ifdef _DEBUG
-            stack_trace.pop();
-#endif
             cycleWait(8);
             uint16_t returnAddress = pop();
+#ifdef _DEBUG
+            stack_trace.pop(ram.physical_address(currentPointer),
+                ram.physical_address(returnAddress));
+#endif
             jump(returnAddress);
             cycleWait(4);
         }
@@ -2047,11 +2054,12 @@ void CPU::step()
 #endif
         if (regs.Zf)
         {
-#ifdef _DEBUG
-            stack_trace.pop();
-#endif
             cycleWait(8);
             uint16_t returnAddress = pop();
+#ifdef _DEBUG
+            stack_trace.pop(ram.physical_address(currentPointer),
+                ram.physical_address(returnAddress));
+#endif
             jump(returnAddress);
             cycleWait(4);
         }
@@ -2066,12 +2074,13 @@ void CPU::step()
 #ifdef _INSTR_LOG
         std::cout << "RET" << std::endl;
 #endif
-#ifdef _DEBUG
-        stack_trace.pop();
-#endif
         uint16_t returnAddress = pop();
+#ifdef _DEBUG
+        stack_trace.pop(ram.physical_address(currentPointer),
+            ram.physical_address(returnAddress));
+#endif
         jump(returnAddress);
-        cycleWait(12);
+        cycleWait(4);
         break;
     }
     case 0xCA: // JP Z, a16
@@ -2172,12 +2181,14 @@ void CPU::step()
 #endif
         if (!regs.Cf)
         {
-#ifdef _DEBUG
-            stack_trace.pop();
-#endif
+            cycleWait(8);
             uint16_t returnAddress = pop();
+#ifdef _DEBUG
+            stack_trace.pop(ram.physical_address(currentPointer),
+                ram.physical_address(returnAddress));
+#endif
             jump(returnAddress);
-            cycleWait(20);
+            cycleWait(4);
         }
         else
         {
@@ -2273,12 +2284,14 @@ void CPU::step()
 #endif
         if (regs.Cf)
         {
-#ifdef _DEBUG
-            stack_trace.pop();
-#endif
-            cycleWait(20);
+            cycleWait(8);
             uint16_t returnAddress = pop();
+#ifdef _DEBUG
+            stack_trace.pop(ram.physical_address(currentPointer),
+                ram.physical_address(returnAddress));
+#endif
             jump(returnAddress);
+            cycleWait(4);
         }
         else
         {
@@ -2291,13 +2304,14 @@ void CPU::step()
 #ifdef _INSTR_LOG
         std::cout << "RETI" << std::endl;
 #endif
-#ifdef _DEBUG
-        stack_trace.pop();
-#endif
+        cycleWait(8);
         uint16_t returnAddress = pop();
+#ifdef _DEBUG
+        stack_trace.pop(ram.physical_address(currentPointer),
+            ram.physical_address(returnAddress));
+#endif
         jump(returnAddress);
         interruptsEnabled = true;
-        cycleWait(16);
         break;
     }
     case 0xDA: // JP C, a16
@@ -2490,8 +2504,8 @@ void CPU::step()
 #ifdef _INSTR_LOG
         std::cout << hex<uint8_t>(nextVal) << " LD A, (" << hex<uint16_t>(value) << ")" << std::endl;
 #endif
-        cycleWait(4);
         regs.A = ram.read(value);
+        cycleWait(4);
         break;
     }
     case 0xF1: // POP AF
@@ -2622,9 +2636,11 @@ void CPU::step()
     }
     default:
     {
-        stack_trace.dump();
         std::cerr << "ERR: Illegal instruction " << hex<uint8_t>(instr)
             << " at address " << hex<uint32_t>(ram.physical_address(regs.PC)) << std::endl;
+        regs.dump();
+        stack_trace.dump();
+        std::cerr << "Stack depth: " << stack_depth << std::endl;
 
         std::ostringstream sstream;
         sstream << "0x" << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << +instr << std::nouppercase;
