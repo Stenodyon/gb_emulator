@@ -33,6 +33,9 @@
 #define _INSTR_LOG
 #endif
 
+#define DMA_PER_CYCLE 4.05
+#define DMA_DEST 0xFE00
+
 class OpcodeNotImplemented : public std::runtime_error
 {
 public:
@@ -175,6 +178,8 @@ public:
             display.OnMachineCycle(1);
             sound.OnMachineCycle(1);
         }
+        for (uint64_t cycle = 0; cycle < cycleCount; cycle++)
+            updateDMA();
         this->cycleCount += cycleCount;
     }
 
@@ -251,6 +256,11 @@ public:
     void prefixCB();
     void run();
     void updateInput();
+
+    uint32_t dma_left = 0;
+    uint16_t dma_source = 0;
+    double dma_timer = 0;
+    void updateDMA();
 
     void RLC(uint8_t & value)
     {

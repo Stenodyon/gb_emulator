@@ -20,6 +20,10 @@
 
 #include <fstream>
 
+#ifndef __GNUC__
+#define __attribute__(x)
+#endif
+
 void checkCGB(uint8_t * data)
 {
     uint8_t cgb_flag = *(data + 0x0143);

@@ -67,6 +67,7 @@ void CPU::run()
 
 void CPU::DMATranfer(uint8_t source)
 {
+#if 0
     static const uint16_t destinationAddress = 0xFE00;
     uint16_t sourceAddress = source << 8;
     for (uint8_t index = 0; index < 0xA0; index++)
@@ -74,6 +75,10 @@ void CPU::DMATranfer(uint8_t source)
         uint8_t value = ram.read(sourceAddress + index);
         ram.writeB(destinationAddress + index, value);
     }
+#endif
+    dma_source = (uint16_t)source << 8;
+    dma_left = 0xA0;
+    dma_timer = 0;
 }
 
 
@@ -90,5 +95,22 @@ void CPU::updateInput()
         display.controller_status.down = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_DPAD_DOWN);
         display.controller_status.left = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_DPAD_LEFT);
         display.controller_status.right = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT);
+    }
+}
+
+void CPU::updateDMA()
+{
+    if (dma_left > 0)
+    {
+        dma_timer += 1.;
+        while (dma_timer >= DMA_PER_CYCLE)
+        {
+            uint16_t source_index = dma_source + (0xA0 - dma_left);
+            uint16_t dest_index = DMA_DEST + (0xA0 - dma_left);
+            uint8_t value = ram.read(source_index);
+            ram.writeB(dest_index, value);
+            dma_left--;
+            dma_timer = std::fmod(dma_timer, DMA_PER_CYCLE);
+        }
     }
 }
