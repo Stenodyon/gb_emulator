@@ -238,6 +238,7 @@ int main(int argc, char * argv[])
             //cpu.breakpoints.push_back(0xB05);
             //cpu.breakpoints.push_back(0x0A03);
 #endif
+            cpu.breakpoints.push_back(0x100);
             cpu.run();
 #ifdef _DEBUG
         }

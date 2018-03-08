@@ -64,7 +64,7 @@ uint8_t RAM::read(uint16_t address)
     if (address < 0xFEA0) // OAM RAM
         return cpu->display.oam_ram[address - 0xFE00];
     if (address < 0xFF00) // Unusable area
-        return 0;
+        return 0xFF;
     if (address < 0xFF80) // IO Registers
         return cpu->OnIORead(address & 0x00FF);
     if (address < 0xFFFF) // High RAM

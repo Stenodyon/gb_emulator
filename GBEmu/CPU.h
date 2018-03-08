@@ -945,7 +945,7 @@ public:
         case 0x4D: // CGB - Speed Switch
             return speed_switch;
         case 0xFF: // Interrupt master flag
-            return (uint8_t)interruptsEnabled;
+            return int_enable;
         default:
         {
             std::cerr << "Unimplemented IO port read " << hex<uint8_t>(port) << std::endl;
