@@ -16,6 +16,7 @@
 #include <SDL.h>
 #include <chrono>
 #include <thread>
+#include <cstring>
 
 #include "RAM.h"
 #include "Joypad.h"

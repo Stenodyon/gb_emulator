@@ -29,6 +29,10 @@
 #include "Joypad.h"
 #include "Stacktrace.h"
 
+#if 0
+#define _INSTR_LOG
+#endif
+
 class OpcodeNotImplemented : public std::runtime_error
 {
 public:
@@ -818,8 +822,8 @@ public:
             unused_75 = value & 0x38;
             break;
         }
-        case 0x6C: case 0x6D: case 0x6E: case 0x6F: case 0x70: case 0x71: case 0x74:
-        case 0x76: case 0x77: case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E: case 0x7F:
+        case 0x68: case 0x69: case 0x6A: case 0x6B: case 0x6C: case 0x6D: case 0x6E: case 0x6F:
+        case 0x70: case 0x71: case 0x74: case 0x76: case 0x77: case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E: case 0x7F:
             break;
         case 0xFF: // Interrupt Enable
         {
@@ -831,7 +835,10 @@ public:
         }
         default:
         {
-            std::cerr << "Unimplemented IO port write " << hex<uint8_t>(port) << std::endl;
+            regs.dump();
+            stack_trace.dump();
+            std::cerr << "Unimplemented IO port write " << hex<uint8_t>(port)
+                << " at " << hex<uint32_t>(ram.physical_address(regs.PC)) << std::endl;
             std::ostringstream sstream;
             sstream << "Warning, writing " << hex<uint8_t>(value) << " to IO port " << hex<uint8_t>(port);
             throw IOPortNotImplemented(sstream.str());

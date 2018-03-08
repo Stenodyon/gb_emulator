@@ -19,6 +19,8 @@
 #include <algorithm>
 #include <thread>
 #include <chrono>
+#include <cstring>
+#include <cmath>
 
 #include "Sound.h"
 

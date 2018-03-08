@@ -80,12 +80,15 @@ void CPU::DMATranfer(uint8_t source)
 void CPU::updateInput()
 {
     SDL_GameControllerUpdate();
-    display.controller_status.button_a = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_B);
-    display.controller_status.button_b = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_A);
-    display.controller_status.button_start = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_START);
-    display.controller_status.button_select = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_BACK);
-    display.controller_status.up = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_DPAD_UP);
-    display.controller_status.down = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_DPAD_DOWN);
-    display.controller_status.left = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_DPAD_LEFT);
-    display.controller_status.right = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT);
+    if(display.controller != nullptr)
+    {
+        display.controller_status.button_a = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_B);
+        display.controller_status.button_b = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_A);
+        display.controller_status.button_start = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_START);
+        display.controller_status.button_select = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_BACK);
+        display.controller_status.up = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_DPAD_UP);
+        display.controller_status.down = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_DPAD_DOWN);
+        display.controller_status.left = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_DPAD_LEFT);
+        display.controller_status.right = SDL_GameControllerGetButton(display.controller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT);
+    }
 }

@@ -260,12 +260,14 @@ paket-files/
 __pycache__/
 *.pyc
 
+resources/
+lib/*
+build/
 *.gb
 *.url
-bgb/
-resources/
 *.pdf
 convert.py
 *.zip
 *.bin
-lib/*
+*.dll
+GBEmu.*

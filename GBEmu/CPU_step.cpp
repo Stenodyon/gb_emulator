@@ -11,13 +11,10 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <algorithm>
 
 #include "stdafx.h"
 #include "CPU.h"
-
-#if 0
-#define _INSTR_LOG
-#endif
 
 void CPU::step()
 {

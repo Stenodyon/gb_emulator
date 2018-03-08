@@ -86,7 +86,7 @@ void RAM::writeB(uint16_t address, uint8_t value)
         else if (address < 0xE000) // Work RAM
             work_ram[address - 0xC000] = value;
         else if (address < 0xFE00) // Echo RAM
-            work_ram[address - 0xC000] = value;
+            work_ram[address - 0xE000] = value;
         else if (address < 0xFEA0) // OAM RAM
             cpu->display.oam_ram[address - 0xFE00] = value;
         else if (address < 0xFF00) // Unusable RAM
@@ -122,7 +122,7 @@ void RAM::writeB(uint16_t address, uint8_t value)
         else if (address < 0xE000) // Work RAM
             work_ram[address - 0xC000] = value;
         else if (address < 0xFE00) // Echo RAM
-            work_ram[address - 0xC000] = value;
+            work_ram[address - 0xE000] = value;
         else if (address < 0xFEA0) // OAM RAM
             cpu->display.oam_ram[address - 0xFE00] = value;
         else if (address < 0xFF00) // Unusable RAM
@@ -157,7 +157,7 @@ void RAM::writeB(uint16_t address, uint8_t value)
         else if (address < 0xE000) // Work RAM
             work_ram[address - 0xC000] = value;
         else if (address < 0xFE00) // Echo RAM
-            work_ram[address - 0xC000] = value;
+            work_ram[address - 0xE000] = value;
         else if (address < 0xFEA0) // OAM RAM
             cpu->display.oam_ram[address - 0xFE00] = value;
         else if (address < 0xFF00) // Unusable RAM
