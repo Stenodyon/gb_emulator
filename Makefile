@@ -7,6 +7,8 @@ FLAGS=-std=c++17 -Wall -Wextra -I./lib/include
 LIBS=-L./lib/lib/x64/ -lSDL2
 
 BIN=GBEmu.exe
+BIN_DEBUG=GBEmu.debug.exe
+BIN_TEST=GBEmu.test.exe
 
 default: release
 
@@ -14,19 +16,26 @@ release: FLAGS+= -O2
 release: $(BIN)
 
 debug: FLAGS+= -g -D _DEBUG
-debug: $(BIN).debug
+debug: $(BIN_DEBUG)
+
+test: FLAGS+= -D _TESTING
+test: $(BIN_TEST)
+	$(BIN_TEST)
 
 clean:
 	-rm -rf $(BUILD_DIR)
 	-rm $(BIN) $(BIN).debug
 
-.PHONY: release debug clean
+.PHONY: release debug test clean
 
 $(BIN): $(OBJ)
 	g++ $(FLAGS) $(OBJ) $(LIBS) -o $(BIN)
 
-$(BIN).debug: $(OBJ)
-	g++ $(FLAGS) $(OBJ) $(LIBS) -o $(BIN).debug
+$(BIN_DEBUG): $(OBJ)
+	g++ $(FLAGS) $(OBJ) $(LIBS) -o $(BIN_DEBUG)
+
+$(BIN_TEST): $(OBJ)
+	g++ $(FLAGS) $(OBJ) $(LIBS) -o $(BIN_TEST)
 
 $(BUILD_DIR)%.o: %.cpp
 	@mkdir -p $(dir $@)

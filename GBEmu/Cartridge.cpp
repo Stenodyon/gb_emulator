@@ -100,7 +100,9 @@ MBC Cartridge::cart_header::get_mbc() const
 }
 
 Cartridge::Cartridge(uint8_t * data, uint64_t size)
-    : rom(data), rom_size(size), header((cart_header*)(data + HEADER_OFFSET))
+    : rom(data), rom_size(size),
+    ram(nullptr), ram_size(0),
+    header((cart_header*)(data + HEADER_OFFSET))
 {
     ram_size = header->get_ram_size();
     if (ram_size > 0)

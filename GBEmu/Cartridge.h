@@ -26,7 +26,7 @@ enum MBC
 
 class Cartridge
 {
-private:
+public:
     struct cart_header
     {
         uint8_t entry_point[4];
@@ -56,7 +56,6 @@ private:
     };
     static_assert(sizeof(cart_header) == 0x50, "struct cat_header is not 80 bytes long");
 
-public:
     uint8_t * rom;
     uint64_t rom_size;
     uint8_t * ram;

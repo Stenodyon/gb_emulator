@@ -11,49 +11,21 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <cmath>
+
 #include "stdafx.h"
 #include "CPU.h"
-
-static const double delay_2ms = 0.238418579 * 4196 * 4; // (4196 cycles ~= 1ms)
-
-namespace cr = std::chrono;
-
-using s_clock = cr::steady_clock;
 
 void CPU::run()
 {
     std::cout << "--- Starting execution ---" << std::endl;
-    auto last_sleep = s_clock::now();
     while (running)
     {
         if (!halted)
             step();
         else
             cycleWait(4);
-        //display.update();
         checkInterrupts();
-        //std::this_thread::yield();
-#if 0
-        int64_t remainder = cycleCount - 4 * 4196;
-        if (remainder > 0) // Amount of cycles in 4 ms
-        {
-            cycleCount = remainder;
-            auto now = std::chrono::system_clock::now();
-            auto computation_time = now - last_sleep;
-            auto delay = std::chrono::milliseconds(4) - computation_time;
-            last_sleep = now;
-            std::this_thread::sleep_for(delay);
-            updateInput();
-        }
-#endif
-#if 0
-        if (s_clock::now() - last_sleep > cr::milliseconds(1))
-        {
-            std::this_thread::sleep_for(cr::milliseconds(1));
-            updateInput();
-            last_sleep = s_clock::now();
-        }
-#endif
     }
     std::cout << "--- Execution stopped ---" << std::endl;
 
@@ -67,15 +39,6 @@ void CPU::run()
 
 void CPU::DMATranfer(uint8_t source)
 {
-#if 0
-    static const uint16_t destinationAddress = 0xFE00;
-    uint16_t sourceAddress = source << 8;
-    for (uint8_t index = 0; index < 0xA0; index++)
-    {
-        uint8_t value = ram.read(sourceAddress + index);
-        ram.writeB(destinationAddress + index, value);
-    }
-#endif
     dma_source = (uint16_t)source << 8;
     dma_left = 0xA0;
     dma_timer = 0;
