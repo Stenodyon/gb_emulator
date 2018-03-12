@@ -13,6 +13,8 @@
 
 #include "stdafx.h"
 
+#include <fstream>
+
 #include "Cartridge.h"
 #include "hex.h"
 
@@ -99,6 +101,15 @@ MBC Cartridge::cart_header::get_mbc() const
     }
 }
 
+Cartridge::Cartridge(uint8_t * rom_data, uint64_t rom_size, uint8_t * ram_data, uint64_t ram_size,
+    bool rom_owner, bool ram_owner)
+    : rom(rom_data), rom_size(rom_size), ram(ram_data), ram_size(ram_size),
+    rom_owner(rom_owner), ram_owner(ram_owner),
+    header((cart_header*)(rom_data + HEADER_OFFSET))
+{
+    rom_bank_count = header->get_rom_bank_count();
+}
+
 Cartridge::Cartridge(uint8_t * data, uint64_t size)
     : rom(data), rom_size(size),
     ram(nullptr), ram_size(0),
@@ -107,14 +118,18 @@ Cartridge::Cartridge(uint8_t * data, uint64_t size)
     ram_size = header->get_ram_size();
     if (ram_size > 0)
         ram = (uint8_t*)malloc(ram_size * sizeof(uint8_t));
+    ram_owner = true;
 
+    rom_owner = false;
     rom_bank_count = header->get_rom_bank_count();
 }
 
 
 Cartridge::~Cartridge()
 {
-    if (ram != nullptr)
+    if (rom_owner && rom != nullptr)
+        free(rom);
+    if (ram_owner && ram != nullptr)
         free(ram);
 }
 
@@ -150,4 +165,43 @@ void Cartridge::write_ram(uint8_t ram_bank, uint16_t address, uint8_t value)
     uint64_t offset = (uint64_t)ram_bank * 0x2000 + address;
     if (offset < ram_size)
         ram[offset] = value;
+}
+
+Cartridge Cartridge::from_file(const std::string & rom_filename, const std::string & ram_filename)
+{
+    std::ifstream rom_file(rom_filename, std::ios::in | std::ios::binary);
+    if (!rom_file.good())
+    {
+        std::cerr << "Could not open file '" << rom_filename << "'" << std::endl;
+        exit(-1);
+    }
+    rom_file.seekg(0, std::ios::end);
+    size_t rom_size = rom_file.tellg();
+    rom_file.seekg(0, std::ios::beg);
+    uint8_t * rom_data = (uint8_t*)malloc(rom_size * sizeof(uint8_t));
+    if (rom_data == nullptr)
+    {
+        std::cerr << "Could not allocate memory for the ROM" << std::endl;
+        exit(-1);
+    }
+    rom_file.read((char*)rom_data, rom_size);
+    rom_file.close();
+
+    std::ifstream ram_file(ram_filename, std::ios::in | std::ios::binary);
+    if (!ram_file.good()) // No save file found
+        return Cartridge(rom_data, rom_size);
+
+    ram_file.seekg(0, std::ios::end);
+    size_t ram_size = ram_file.tellg();
+    ram_file.seekg(0, std::ios::beg);
+    uint8_t * ram_data = (uint8_t*)malloc(ram_size * sizeof(uint8_t));
+    if (ram_data == nullptr)
+    {
+        std::cerr << "Could not allocate memory for the ram" << std::endl;
+        exit(-1);
+    }
+    ram_file.read((char*)ram_data, ram_size);
+    ram_file.close();
+
+    return Cartridge(rom_data, rom_size, ram_data, ram_size, true, true);
 }

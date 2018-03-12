@@ -66,3 +66,15 @@ void trim_spaces(std::string & str)
     str.erase(std::find_if(str.rbegin(), str.rend(), [](char ch) { return !std::isspace(ch); }).base(),
         str.end());
 }
+
+std::string remove_extension(std::string filename)
+{
+    auto last_index = filename.find_last_of(".");
+    return filename.substr(0, last_index);
+}
+
+void write_bin(uint8_t * data, size_t size, const std::string & filename)
+{
+    std::fstream file(filename, std::ios::out | std::ios::binary);
+    file.write((char*)data, size);
+}

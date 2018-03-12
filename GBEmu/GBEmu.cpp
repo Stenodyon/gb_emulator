@@ -189,23 +189,9 @@ int main(int argc, char * argv[])
         print_usage();
         return -1;
     }
-    uint64_t fileSize = file_size(rom_filename);
-    std::cout << "ROM is " << fileSize << "B" << std::endl;
-    uint8_t * data = (uint8_t*)malloc(fileSize);
-    if (data == NULL)
-    {
-        std::cerr << "Could not allocate memory for the ROM" << std::endl;
-        getchar();
-        return -1;
-    }
-    std::cout << "Allocated memory" << std::endl;
-    std::ifstream romfile;
-    romfile.open(rom_filename, std::ios::in | std::ios::binary);
-    romfile.read((char*)data, fileSize);
-    romfile.close();
-    std::cout << "Read file" << std::endl;
-    romInfo(data);
-    Cartridge cart(data, fileSize);
+    std::string ram_filename = remove_extension(rom_filename) + ".sav";
+    Cartridge cart = Cartridge::from_file(rom_filename, ram_filename);
+    romInfo(cart.rom);
 
     if (args.has_option("-d"))
     {
@@ -233,28 +219,9 @@ int main(int argc, char * argv[])
     else
     {
         CPU cpu = CPU(&cart);
-#ifdef _DEBUG
-        try {
-            //cpu.breakpoints.push_back(0xB05);
-            //cpu.breakpoints.push_back(0x0A03);
-#endif
-            cpu.breakpoints.push_back(0x100);
-            cpu.run();
-#ifdef _DEBUG
-        }
-        catch (OpcodeNotImplemented e)
-        {
-            std::cerr << "Exception caught:" << std::endl;
-            std::cerr << "Unimplemented OpCode: " << e.what() << std::endl;
-        }
-        catch (std::runtime_error e)
-        {
-            std::cerr << "Exception caught:" << std::endl;
-            std::cerr << e.what() << std::endl;
-        }
-#endif
+        cpu.run();
     }
-    free(data);
+    write_bin(cart.ram, cart.ram_size, ram_filename);
     return 0;
 }
 #endif

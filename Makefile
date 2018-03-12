@@ -24,7 +24,7 @@ test: $(BIN_TEST)
 
 clean:
 	-rm -rf $(BUILD_DIR)
-	-rm $(BIN) $(BIN).debug
+	-rm $(BIN) $(BIN_DEBUG) $(BIN_TEST)
 
 .PHONY: release debug test clean
 

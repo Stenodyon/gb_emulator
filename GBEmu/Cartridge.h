@@ -26,6 +26,9 @@ enum MBC
 
 class Cartridge
 {
+private:
+    bool rom_owner;
+    bool ram_owner;
 public:
     struct cart_header
     {
@@ -63,11 +66,15 @@ public:
     cart_header * header;
     uint32_t rom_bank_count;
 
+    Cartridge(uint8_t * rom_data, uint64_t rom_size, uint8_t * ram_data, uint64_t ram_size,
+        bool rom_owner = false, bool ram_owner = false);
     Cartridge(uint8_t * data, uint64_t size);
     ~Cartridge();
 
     uint8_t read(uint8_t rom_bank, uint16_t address);
     uint8_t read_ram(uint8_t ram_bank, uint16_t address);
     void write_ram(uint8_t ram_bank, uint16_t address, uint8_t value);
+
+    static Cartridge from_file(const std::string & rom_filename, const std::string & ram_filename);
 };
 

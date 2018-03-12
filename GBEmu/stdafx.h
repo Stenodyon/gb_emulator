@@ -28,6 +28,8 @@ std::ifstream::pos_type file_size(const std::string& filename);
 std::string read_file(std::string filename);
 std::vector<std::string> split(std::string src, std::string delimiter);
 void trim_spaces(std::string & str);
+std::string remove_extension(std::string filename);
+void write_bin(uint8_t * data, size_t size, const std::string & filename);
 
 #define uif uint_fast16_t
 
