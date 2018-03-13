@@ -104,17 +104,19 @@ private:
 
     uint8_t envelope_counter;
     uint8_t envelope_volume;
+#pragma pack(push, 1)
     union {
         uint16_t lfsr : 15;
         struct {
-            uint8_t xor_a : 1;
-            uint8_t xor_b : 1;
-            uint8_t pad1 : 4;
-            uint8_t low_set : 1;
-            uint8_t pad2 : 8;
-            uint8_t high_set : 1;
+            uint16_t xor_a : 1;
+            uint16_t xor_b : 1;
+            uint16_t pad1 : 4;
+            uint16_t low_set : 1;
+            uint16_t pad2 : 7;
+            uint16_t high_set : 1;
         };
     };
+#pragma pack(pop)
 public:
     channel4() : sound(nullptr) {
         //assert(false);
@@ -184,7 +186,8 @@ public:
     }
 };
 
-#define WRITE_BUF_SIZE 1024
+#define SAMPLE_COUNT 735
+#define WRITE_BUF_SIZE 2 * SAMPLE_COUNT
 #define BUF_COUNT 4
 #define SOUND_BUF_SIZE BUF_COUNT * WRITE_BUF_SIZE
 
@@ -417,7 +420,7 @@ private:
     void clockFrameCounter();
     uint8_t frame_counter = 0;
     uint_fast8_t cycleCount = 0;
-    uint8_t sample_audio();
+    void sample_audio();
     void audio_callback_(uint8_t * stream, int length);
 
 public:
@@ -443,6 +446,6 @@ public:
 
     void OnMachineCycle(uint64_t cycles);
     void init();
-    void write_sample(uint8_t sample);
+    void write_sample(uint8_t left_sample, uint8_t right_sample);
 };
 

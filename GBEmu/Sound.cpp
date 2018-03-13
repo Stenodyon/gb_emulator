@@ -24,8 +24,10 @@
 #include <chrono>
 #include <cstring>
 #include <cmath>
+#include <bitset>
 
 #include "Sound.h"
+#include "hex.h"
 
 channel1::channel1(Sound * sound) : sound(sound)
 {
@@ -293,11 +295,20 @@ void channel4::on_envelope_clock()
 
 void channel4::on_frequency_clock()
 {
-    bool low_xor = xor_a ^ xor_b;
+    bool low_xor = xor_a != xor_b;
     lfsr >>= 1;
     high_set = low_xor;
     if (sound->c4_poly_counter.width)
         low_set = low_xor;
+#if 0
+    if (sound->master_control.sound4)
+    {
+        std::cout << std::bitset<15>(lfsr)
+            << " " << +high_set << " " << std::bitset<7>(pad2)
+            << " " << +low_set << " " << std::bitset<4>(pad1)
+            << " " << +xor_b << " " << +xor_a << std::endl;
+    }
+#endif
 }
 
 uint64_t noise_periods[8] = {
@@ -306,7 +317,7 @@ uint64_t noise_periods[8] = {
 
 uint64_t channel4::get_period()
 {
-    return noise_periods[sound->c4_poly_counter.ratio] << (sound->c4_poly_counter.shift_frequency + 1);
+    return noise_periods[sound->c4_poly_counter.ratio] << sound->c4_poly_counter.shift_frequency;
 }
 
 uint8_t channel4::get_sample()
@@ -348,8 +359,8 @@ void Sound::init()
         SDL_AudioSpec spec;
         spec.freq = 44100;
         spec.format = AUDIO_U8;
-        spec.channels = 1;
-        spec.samples = WRITE_BUF_SIZE;
+        spec.channels = 2;
+        spec.samples = SAMPLE_COUNT;
         spec.callback = audio_callback;
         spec.userdata = this;
 
@@ -428,7 +439,7 @@ void Sound::OnMachineCycle(uint64_t cycles)
         if (elapsed_cycle >= CYCLES_PER_SAMPLE)
         {
             sample_counter++;
-            write_sample(sample_audio());
+            sample_audio();
             elapsed_cycle = std::fmod(elapsed_cycle, CYCLES_PER_SAMPLE);
         }
 #endif
@@ -459,15 +470,18 @@ void Sound::clockFrameCounter()
 
 static const double period_440 = 2.27272727;
 
-uint8_t Sound::sample_audio()
+void Sound::sample_audio()
 {
     if (!master_control.all_sounds)
-        return 0x00;
+    {
+        write_sample(0x00, 0x00);
+        return;
+    }
 
-    uint8_t c1_sample = chan1.get_sample();
-    uint8_t c2_sample = chan2.get_sample();
-    uint8_t c3_sample = chan3.get_sample();
-    uint8_t c4_sample = chan4.get_sample();
+    uint64_t c1_sample = chan1.get_sample();
+    uint64_t c2_sample = chan2.get_sample();
+    uint64_t c3_sample = chan3.get_sample();
+    uint64_t c4_sample = chan4.get_sample();
 
     uint64_t so1 = 0, so2 = 0;
     if (sound_output.sound1_so1)
@@ -487,55 +501,25 @@ uint8_t Sound::sample_audio()
     if (sound_output.sound4_so2)
         so2 += c4_sample;
 
-    so1 *= (channel_control.so1_level + 1);
-    so2 *= (channel_control.so2_level + 1);
+    so1 *= ((uint8_t)(channel_control.so1_level) + 1);
+    so2 *= ((uint8_t)(channel_control.so2_level) + 1);
+
+    so1 = (so1 * 0xFF) / 0x1E0;
+    so2 = (so2 * 0xFF) / 0x1E0;
 
     if (so1 > 0xFF)
         so1 = 0xFF;
     if (so2 > 0xFF)
         so2 = 0xFF;
 
-    uint8_t mono = (uint8_t)(((uint16_t)so1 + so2) / 2);
-    if (mono > 0xFF)
-        return 0xFF;
-
-    return mono;
+    write_sample(so1, so2);
 }
 
-#if 0
-uint8_t Sound::sample_audio()
+void Sound::write_sample(uint8_t left_sample, uint8_t right_sample)
 {
-    const double delta = 1000. / 44100;
-    static uint64_t sample_count = 0;
-    sample_count = (sample_count + 1) % (3 * 44100);
-    //double time = sample_count * delta;
-    static double time = 0;
-
-    if (!master_control.all_sounds)
-        return 0x80;
-
-    //bool c2_mute = 
-    uint8_t c2_sample = sample_c2(time);
-
-    uint8_t so1 = 0, so2 = 0;
-    if (sound_output.sound2_so1)
-        so1 += c2_sample;
-    if (sound_output.sound2_so2)
-        so2 += c2_sample;
-
-    so1 = (uint8_t)(so1 * channel_control.so1_level / 7.);
-    so2 = (uint8_t)(so2 * channel_control.so2_level / 7.);
-
-    return so1 + so2;
-}
-#endif
-
-void Sound::write_sample(uint8_t sample)
-{
-#if 1
-    //(sound_buffer + write_ptr)[write_index] = (sample / 2) + 0x80;
-    (sound_buffer + write_ptr)[write_index] = sample;
-    write_index++;
+    (sound_buffer + write_ptr)[write_index] = left_sample;
+    (sound_buffer + write_ptr)[write_index+1] = right_sample;
+    write_index += 2;
     if (write_index == WRITE_BUF_SIZE)
     {
         write_index = 0;
@@ -543,5 +527,4 @@ void Sound::write_sample(uint8_t sample)
         //printf("Currently %" PRIu32 " buffers free\n", SDL_SemValue(free_buffs));
         SDL_SemWait(free_buffs); // A free buffer was taken
     }
-#endif
 }

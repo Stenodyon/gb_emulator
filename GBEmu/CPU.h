@@ -653,7 +653,7 @@ public:
             unused_register_1F = value;
             break;
         }
-        case 0x20: // Sound - Channel 3 Sound length
+        case 0x20: // Sound - Channel 4 Sound length
         {
 #ifdef _INSTR_LOG
             std::cout << "Wrote " << hex<uint8_t>(value) << " to channel 4 sound length register" << std::endl;
